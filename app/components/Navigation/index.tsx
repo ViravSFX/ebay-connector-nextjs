@@ -1,13 +1,14 @@
 'use client';
 
 import { VStack, HStack, Box, Text } from "@chakra-ui/react";
-import { MdOutlineSpaceDashboard, MdLogout, MdOutlinePeople, MdVpnKey } from "react-icons/md";
+import { MdOutlineSpaceDashboard, MdLogout, MdOutlinePeople, MdVpnKey, MdOutlineStore } from "react-icons/md";
 import { usePathname, useRouter } from "next/navigation";
 
 const navigationItems = [
   { text: "Dashboard", icon: MdOutlineSpaceDashboard, path: "/" },
   { text: "Users", icon: MdOutlinePeople, path: "/users" },
   { text: "API Tokens", icon: MdVpnKey, path: "/api-tokens" },
+  { text: "eBay Accounts", icon: MdOutlineStore, path: "/ebay-connections" },
   { text: "Logout", icon: MdLogout, path: "/login" },
 ];
 
@@ -78,6 +79,10 @@ export function Navigation({ collapse }: NavigationProps) {
     // For API Tokens, check if we're on api-tokens page
     if (item.text === "API Tokens") {
       return pathname === "/api-tokens";
+    }
+    // For eBay Accounts, check if we're on ebay-connections page
+    if (item.text === "eBay Accounts") {
+      return pathname === "/ebay-connections";
     }
     // For Logout, never mark as active
     if (item.text === "Logout") {
