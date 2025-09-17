@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import {
   Box,
   VStack,
-  HStack,
   Heading,
   Text,
   Button,
@@ -17,6 +16,7 @@ import {
 } from '@chakra-ui/react';
 import axios from 'axios';
 import InfoCard from '../components/InfoCard';
+import React from 'react';
 
 interface User {
   id: string;
@@ -80,51 +80,9 @@ export default function DashboardPage() {
   }
 
   return (
-      <Box minH="100vh" bg="gray.50">
-          {/* Navigation */}
-          <Box bg="white" shadow="sm" borderBottom="1px" borderColor="gray.200">
-              <Box maxW="7xl" mx="auto" px={{ base: 4, sm: 6, lg: 8 }}>
-                  <Flex justify="between" h="16">
-                      <Flex align="center">
-                          <Heading size="lg" color="gray.900">
-                              eBay Connector
-                          </Heading>
-                      </Flex>
-                      <Flex align="center" gap={4}>
-                          <HStack gap={3}>
-                              <Avatar.Root size="sm" bg="orange.500">
-                                  <Avatar.Fallback
-                                      name={user?.name || user?.email}
-                                  />
-                              </Avatar.Root>
-                              <VStack gap={0} align="start">
-                                  <Text
-                                      fontSize="sm"
-                                      color="gray.700"
-                                      fontWeight="medium"
-                                  >
-                                      {user.name || user.email}
-                                  </Text>
-                                  <Badge colorScheme="orange" size="sm">
-                                      {user.role}
-                                  </Badge>
-                              </VStack>
-                          </HStack>
-                          <Button
-                              onClick={handleLogout}
-                              variant="ghost"
-                              size="sm"
-                              colorScheme="gray"
-                          >
-                              Sign out
-                          </Button>
-                      </Flex>
-                  </Flex>
-              </Box>
-          </Box>
-
+      <React.Fragment>
           {/* Main content */}
-          <Box maxW="7xl" mx="auto" py={6} px={{ base: 4, sm: 6, lg: 8 }}>
+          <Box py={6} px={{ base: 4, sm: 6, lg: 8 }}>
               <VStack gap={6} align="stretch">
                   <Box>
                       <Heading size="xl" color="gray.900" mb={2}>
@@ -180,6 +138,6 @@ export default function DashboardPage() {
                   </Grid>
               </VStack>
           </Box>
-      </Box>
+      </React.Fragment>
   );
 }

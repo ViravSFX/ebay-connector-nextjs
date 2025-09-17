@@ -1,7 +1,8 @@
+'use client';
+
 import React from 'react';
 import {
   Card,
-  CardBody,
   Box,
   Text,
   Badge,
@@ -17,59 +18,107 @@ interface InfoCardProps {
   iconColor?: string;
   iconBgColor?: string;
   badgeText?: string;
-  badgeColorScheme?: string;
+  badgeColorPalette?: string;
   onClick?: () => void;
   children?: React.ReactNode;
+  variant?: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'teal';
 }
 
 const InfoCard: React.FC<InfoCardProps> = ({
   title,
   description,
   icon,
-  iconColor = 'gray.600',
-  iconBgColor = 'gray.100',
+  iconColor,
+  iconBgColor,
   badgeText,
-  badgeColorScheme = 'gray',
+  badgeColorPalette,
   onClick,
   children,
+  variant = 'blue',
 }) => {
+  // Color scheme based on variant
+  const colorSchemes = {
+    blue: {
+      iconColor: iconColor || 'blue.600',
+      iconBgColor: iconBgColor || 'blue.50',
+      borderColor: 'blue.200',
+      badgeColor: badgeColorPalette || 'blue',
+    },
+    green: {
+      iconColor: iconColor || 'green.600',
+      iconBgColor: iconBgColor || 'green.50',
+      borderColor: 'green.200',
+      badgeColor: badgeColorPalette || 'green',
+    },
+    purple: {
+      iconColor: iconColor || 'purple.600',
+      iconBgColor: iconBgColor || 'purple.50',
+      borderColor: 'purple.200',
+      badgeColor: badgeColorPalette || 'purple',
+    },
+    orange: {
+      iconColor: iconColor || 'orange.600',
+      iconBgColor: iconBgColor || 'orange.50',
+      borderColor: 'orange.200',
+      badgeColor: badgeColorPalette || 'orange',
+    },
+    red: {
+      iconColor: iconColor || 'red.600',
+      iconBgColor: iconBgColor || 'red.50',
+      borderColor: 'red.200',
+      badgeColor: badgeColorPalette || 'red',
+    },
+    teal: {
+      iconColor: iconColor || 'teal.600',
+      iconBgColor: iconBgColor || 'teal.50',
+      borderColor: 'teal.200',
+      badgeColor: badgeColorPalette || 'teal',
+    },
+  };
+
+  const colors = colorSchemes[variant];
+
   return (
     <GridItem>
       <Card.Root
         cursor={onClick ? 'pointer' : 'default'}
         transition="all 0.3s"
-        _hover={onClick ? { transform: 'translateY(-4px)', shadow: 'xl' } : {}}
+        _hover={onClick ? { transform: 'translateY(-4px)', boxShadow: 'xl' } : {}}
         onClick={onClick}
         borderRadius="xl"
         overflow="hidden"
         border="1px solid"
-        borderColor="gray.100"
+        borderColor={colors.borderColor}
+        bg="white"
+        boxShadow="md"
       >
-        <CardBody p={6}>
+        <Card.Body p={6}>
           <VStack align="stretch" gap={4}>
             <HStack gap={3}>
               {icon && (
                 <Box
                   p={3}
                   rounded="lg"
-                  bg={iconBgColor}
-                  color={iconColor}
+                  bg={colors.iconBgColor}
+                  color={colors.iconColor}
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
+                  minW={12}
+                  h={12}
                 >
                   <Text fontSize="xl">{icon}</Text>
                 </Box>
               )}
               <VStack gap={1} align="start" flex={1}>
-                <Text fontWeight="semibold" color="gray.900">
+                <Text fontWeight="semibold" color="gray.900" fontSize="lg">
                   {title}
                 </Text>
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize="sm" color="gray.600" lineHeight="1.4">
                   {description}
                 </Text>
                 {badgeText && (
-                  <Badge colorScheme={badgeColorScheme} size="sm">
+                  <Badge colorPalette={colors.badgeColor} size="sm" mt={1}>
                     {badgeText}
                   </Badge>
                 )}
@@ -77,7 +126,7 @@ const InfoCard: React.FC<InfoCardProps> = ({
             </HStack>
             {children}
           </VStack>
-        </CardBody>
+        </Card.Body>
       </Card.Root>
     </GridItem>
   );
