@@ -4,10 +4,11 @@
   "description": "eBay Connector - Next.js Version",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "npx prisma generate && next build",
     "dev": "next dev --turbopack",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "npx prisma generate",
     "db:generate": "npx prisma generate",
     "db:migrate": "npx prisma migrate deploy",
     "db:seed": "npx prisma db seed"

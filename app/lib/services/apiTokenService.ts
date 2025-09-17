@@ -64,10 +64,10 @@ export class ApiTokenService {
         userId,
         name: data.name,
         token,
-        permissions: defaultPermissions as any,
+        permissions: defaultPermissions,
         expiresAt: data.expiresAt
       }
-    });
+    } as any);
 
     return apiToken as ApiTokenResponse;
   }
@@ -247,7 +247,7 @@ export class ApiTokenService {
         userId
       },
       data: dataToUpdate
-    });
+    } as any);
 
     return updatedToken as ApiTokenResponse;
   }
