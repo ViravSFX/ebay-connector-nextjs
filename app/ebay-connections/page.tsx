@@ -38,12 +38,15 @@ export default function EbayConnectionsPage() {
             fetchAccounts(); // Refresh accounts after successful connection
         } else if (error) {
             const errorMessages: Record<string, string> = {
-                oauth_failed: 'OAuth authorization failed',
-                missing_params: 'Missing authorization parameters',
-                invalid_state: 'Invalid security state',
-                invalid_account: 'Invalid account ID',
-                token_exchange_failed: 'Failed to exchange authorization code',
-                callback_failed: 'OAuth callback failed'
+                oauth_failed: 'eBay OAuth authorization was denied or failed',
+                missing_params: 'Missing required OAuth parameters',
+                invalid_state: 'OAuth security validation failed',
+                invalid_account: 'Account not found or invalid',
+                missing_config: 'eBay OAuth configuration error',
+                token_exchange_failed: 'Failed to exchange authorization code for access token',
+                callback_failed: 'eBay OAuth connection failed - please try again',
+                oauth_declined: 'eBay OAuth authorization was cancelled',
+                oauth_error: 'eBay OAuth error occurred'
             };
             setUrlMessage({
                 type: 'error',

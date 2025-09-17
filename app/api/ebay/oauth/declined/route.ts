@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     // Clear any OAuth state cookie if it exists
     const response = NextResponse.redirect(
-      new URL('/ebay-accounts?error=oauth_declined', request.url)
+      new URL('/ebay-connections?error=oauth_declined', request.url)
     );
     response.cookies.delete('ebay_oauth_state');
 
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error handling OAuth decline:', error);
     return NextResponse.redirect(
-      new URL('/ebay-accounts?error=oauth_error', request.url)
+      new URL('/ebay-connections?error=oauth_error', request.url)
     );
   }
 }

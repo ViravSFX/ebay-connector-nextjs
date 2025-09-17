@@ -26,12 +26,12 @@ export async function GET(request: NextRequest) {
     // Check for OAuth errors
     if (error) {
       console.error('eBay OAuth error received:', error);
-      return NextResponse.redirect(new URL('/ebay-accounts?error=oauth_failed', baseUrl));
+      return NextResponse.redirect(new URL('/ebay-connections?error=oauth_failed', baseUrl));
     }
 
     if (!code || !state) {
       console.error('Missing required parameters:', { code: !!code, state: !!state });
-      return NextResponse.redirect(new URL('/ebay-accounts?error=missing_params', baseUrl));
+      return NextResponse.redirect(new URL('/ebay-connections?error=missing_params', baseUrl));
     }
 
     // Verify state parameter
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
     if (!storedState || storedState !== state) {
       console.error('State parameter mismatch or missing');
-      return NextResponse.redirect(new URL('/ebay-accounts?error=invalid_state', baseUrl));
+      return NextResponse.redirect(new URL('/ebay-connections?error=invalid_state', baseUrl));
     }
 
     // Extract account ID from state
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     if (!accountId) {
       console.error('Could not extract account ID from state');
-      return NextResponse.redirect(new URL('/ebay-accounts?error=invalid_account', baseUrl));
+      return NextResponse.redirect(new URL('/ebay-connections?error=invalid_account', baseUrl));
     }
 
     // Debug: Log environment variables (without exposing sensitive data)
@@ -68,26 +68,45 @@ export async function GET(request: NextRequest) {
     // Validate required environment variables
     if (!process.env.EBAY_CLIENT_ID || !process.env.EBAY_CLIENT_SECRET || !process.env.EBAY_REDIRECT_URI) {
       console.error('Missing required environment variables');
-      return NextResponse.redirect(new URL('/ebay-accounts?error=missing_config', baseUrl));
+      return NextResponse.redirect(new URL('/ebay-connections?error=missing_config', baseUrl));
     }
 
-    console.log('Initializing eBay Auth Token...');
+    console.log('Performing manual token exchange to bypass library issue...');
 
-    // Initialize eBay client directly with credentials
-    const ebayAuthToken = new EbayAuthToken({
-      clientId: process.env.EBAY_CLIENT_ID,
-      clientSecret: process.env.EBAY_CLIENT_SECRET,
-      redirectUri: process.env.EBAY_REDIRECT_URI
+    // Manual token exchange implementation
+    const tokenUrl = process.env.EBAY_SANDBOX === 'true'
+      ? 'https://api.sandbox.ebay.com/identity/v1/oauth2/token'
+      : 'https://api.ebay.com/identity/v1/oauth2/token';
+
+    const credentials = Buffer.from(`${process.env.EBAY_CLIENT_ID}:${process.env.EBAY_CLIENT_SECRET}`).toString('base64');
+
+    const tokenParams = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: code,
+      redirect_uri: process.env.EBAY_REDIRECT_URI
     });
 
-    console.log('eBay Auth Token initialized successfully');
+    console.log('Making token exchange request to:', tokenUrl);
 
-    // Exchange authorization code for access token
-    const environment = process.env.EBAY_SANDBOX === 'true' ? 'SANDBOX' : 'PRODUCTION';
-    console.log('Attempting token exchange with environment:', environment);
+    const tokenResponse = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body: tokenParams.toString()
+    });
 
-    const tokenData = await ebayAuthToken.exchangeCodeForAccessToken(environment, code);
+    console.log('Token response status:', tokenResponse.status);
 
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Token exchange failed:', errorText);
+      throw new Error(`Token exchange failed: ${tokenResponse.status} ${errorText}`);
+    }
+
+    const tokenData = await tokenResponse.json();
     console.log('Token exchange successful:', {
       tokenType: tokenData.token_type,
       expiresIn: tokenData.expires_in,
@@ -157,7 +176,7 @@ export async function GET(request: NextRequest) {
     console.log('Database updated successfully for account:', updatedAccount.id);
 
     // Clear the OAuth state cookie
-    const response = NextResponse.redirect(new URL('/ebay-accounts?success=connected', baseUrl));
+    const response = NextResponse.redirect(new URL('/ebay-connections?success=connected', baseUrl));
     response.cookies.delete('ebay_oauth_state');
 
     console.log('=== OAUTH CALLBACK SUCCESS ===');
@@ -173,6 +192,6 @@ export async function GET(request: NextRequest) {
     });
 
     const baseUrl = `${request.nextUrl.protocol}//${request.nextUrl.host}`;
-    return NextResponse.redirect(new URL('/ebay-accounts?error=callback_failed', baseUrl));
+    return NextResponse.redirect(new URL('/ebay-connections?error=callback_failed', baseUrl));
   }
 }
