@@ -136,33 +136,16 @@ export function useEbayAccounts(): UseEbayAccountsReturn {
   const reconnectAccount = useCallback(async (accountId: string) => {
     setIsReconnecting(prev => ({ ...prev, [accountId]: true }));
     try {
-      console.log('Opening OAuth window for account:', accountId);
-      const oauthWindow = window.open(`/api/ebay/oauth/authorize?accountId=${accountId}`, '_blank');
-
-      // Listen for the window to close (user completed or cancelled OAuth)
-      const checkClosed = setInterval(() => {
-        if (oauthWindow?.closed) {
-          clearInterval(checkClosed);
-          console.log('OAuth window closed, refreshing accounts...');
-          // Refresh accounts list to see if OAuth was successful
-          fetchAccounts();
-          setIsReconnecting(prev => ({ ...prev, [accountId]: false }));
-        }
-      }, 1000);
-
-      // Set a timeout to stop checking after 10 minutes
-      setTimeout(() => {
-        clearInterval(checkClosed);
-        setIsReconnecting(prev => ({ ...prev, [accountId]: false }));
-      }, 600000);
-
+      console.log('Redirecting to OAuth for account:', accountId);
+      // Redirect to OAuth on the same page
+      window.location.href = `/api/ebay/oauth/authorize?accountId=${accountId}`;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       console.error('Error initiating eBay OAuth:', err);
       setIsReconnecting(prev => ({ ...prev, [accountId]: false }));
     }
-  }, [fetchAccounts]);
+  }, []);
 
   const updateAccount = useCallback(async (accountId: string, data: Partial<EbayAccount>) => {
     try {
