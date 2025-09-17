@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  password        String
+  name            String?
+  role            UserRole         @default(USER)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  apiTokens       ApiToken[]
+  ebayConnections EbayConnection[]
+  ebayUserTokens  EbayUserToken[]
+
+  @@map("users")
+}
+
+model ApiToken {
+  id        String    @id @default(cuid())
+  name      String
+  token     String    @unique
+  userId    String
+  createdAt DateTime  @default(now())
+  lastUsed  DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("api_tokens")
+}
+
+model EbayConnection {
+  id             String          @id @default(cuid())
+  name           String
+  clientId       String
+  clientSecret   String
+  environment    String
+  userId         String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ebayUserTokens EbayUserToken[]
+
+  @@map("ebay_connections")
+}
+
+model EbayUserToken {
+  id           String         @id @default(cuid())
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime
+  tokenType    String         @default("Bearer")
+  userId       String
+  connectionId String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  connection   EbayConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, connectionId])
+  @@map("ebay_user_tokens")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  USER
+}
