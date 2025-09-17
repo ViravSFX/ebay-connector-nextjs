@@ -1,73 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '../../../lib/services/database';
-import { PasswordService } from '../../../lib/services/auth';
-import { requireAuth } from '../../../lib/middleware/auth';
+import { AuthService } from '../../../lib/services/authService';
+import { requireAuth } from '../../../lib/middleware/requireAuth';
 
 export const POST = requireAuth(async (request: NextRequest, user) => {
   try {
     const { currentPassword, newPassword } = await request.json();
 
-    // Validation
-    if (!currentPassword || !newPassword) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Current password and new password are required',
-        },
-        { status: 400 }
-      );
-    }
-
-    if (newPassword.length < 8) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'New password must be at least 8 characters long',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Get user from database
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-    });
-
-    if (!dbUser) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'User not found',
-        },
-        { status: 404 }
-      );
-    }
-
-    // Verify current password
-    const isCurrentPasswordValid = await PasswordService.comparePassword(
+    // Use AuthService to change password
+    await AuthService.changeUserPassword({
+      userId: user.id,
       currentPassword,
-      dbUser.password
-    );
-
-    if (!isCurrentPasswordValid) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Current password is incorrect',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Hash new password
-    const hashedNewPassword = await PasswordService.hashPassword(newPassword);
-
-    // Update password in database
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        password: hashedNewPassword,
-      },
+      newPassword,
     });
 
     return NextResponse.json({
@@ -75,8 +18,33 @@ export const POST = requireAuth(async (request: NextRequest, user) => {
       message: 'Password changed successfully',
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Password change error:', error);
+
+    // Handle validation errors
+    if (error.message.includes('required') ||
+        error.message.includes('characters long') ||
+        error.message.includes('incorrect') ||
+        error.message.includes('different')) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (error.message.includes('User not found')) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
       {
         success: false,

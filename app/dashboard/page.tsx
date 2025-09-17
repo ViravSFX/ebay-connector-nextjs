@@ -2,7 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  Box,
+  VStack,
+  HStack,
+  Heading,
+  Text,
+  Button,
+  Flex,
+  Avatar,
+  Badge,
+  Grid,
+  Spinner,
+} from '@chakra-ui/react';
 import axios from 'axios';
+import InfoCard from '../components/InfoCard';
 
 interface User {
   id: string;
@@ -41,14 +55,23 @@ export default function DashboardPage() {
     }
   };
 
+  const handleChangePassword = () => {
+    router.push('/change-password');
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-600">Loading...</p>
-        </div>
-      </div>
+      <Flex
+        minH="100vh"
+        align="center"
+        justify="center"
+        bg="gray.50"
+      >
+        <VStack gap={4}>
+          <Spinner size="xl" color="orange.500" />
+          <Text fontSize="lg" color="gray.600">Loading...</Text>
+        </VStack>
+      </Flex>
     );
   }
 
@@ -57,156 +80,106 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">
-                eBay Connector
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">
-                Welcome, {user.name || user.email}
-              </span>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                {user.role}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md"
-              >
-                Sign out
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Box minH="100vh" bg="gray.50">
+          {/* Navigation */}
+          <Box bg="white" shadow="sm" borderBottom="1px" borderColor="gray.200">
+              <Box maxW="7xl" mx="auto" px={{ base: 4, sm: 6, lg: 8 }}>
+                  <Flex justify="between" h="16">
+                      <Flex align="center">
+                          <Heading size="lg" color="gray.900">
+                              eBay Connector
+                          </Heading>
+                      </Flex>
+                      <Flex align="center" gap={4}>
+                          <HStack gap={3}>
+                              <Avatar.Root size="sm" bg="orange.500">
+                                  <Avatar.Fallback
+                                      name={user?.name || user?.email}
+                                  />
+                              </Avatar.Root>
+                              <VStack gap={0} align="start">
+                                  <Text
+                                      fontSize="sm"
+                                      color="gray.700"
+                                      fontWeight="medium"
+                                  >
+                                      {user.name || user.email}
+                                  </Text>
+                                  <Badge colorScheme="orange" size="sm">
+                                      {user.role}
+                                  </Badge>
+                              </VStack>
+                          </HStack>
+                          <Button
+                              onClick={handleLogout}
+                              variant="ghost"
+                              size="sm"
+                              colorScheme="gray"
+                          >
+                              Sign out
+                          </Button>
+                      </Flex>
+                  </Flex>
+              </Box>
+          </Box>
 
-      {/* Main content */}
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Welcome to eBay Connector Dashboard
-            </h2>
+          {/* Main content */}
+          <Box maxW="7xl" mx="auto" py={6} px={{ base: 4, sm: 6, lg: 8 }}>
+              <VStack gap={6} align="stretch">
+                  <Box>
+                      <Heading size="xl" color="gray.900" mb={2}>
+                          Welcome to eBay Connector Dashboard
+                      </Heading>
+                      <Text color="gray.600">
+                          Manage your authentication and account settings.
+                      </Text>
+                  </Box>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="h-8 w-8 bg-blue-500 rounded-md flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">E</span>
-                      </div>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          eBay Connections
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">
-                          0
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-5 py-3">
-                  <div className="text-sm">
-                    <a
-                      href="#"
-                      className="font-medium text-blue-700 hover:text-blue-900"
-                    >
-                      Manage connections
-                    </a>
-                  </div>
-                </div>
-              </div>
+                  <Grid
+                      templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+                      gap={6}
+                  >
+                      <InfoCard
+                          title="Account Settings"
+                          description="Manage your profile and security"
+                          icon="⚙️"
+                          iconBgColor="orange.100"
+                          iconColor="orange.600"
+                      >
+                          <Button
+                              onClick={handleChangePassword}
+                              colorScheme="orange"
+                              variant="outline"
+                              w="full"
+                          >
+                              Change Password
+                          </Button>
+                      </InfoCard>
 
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="h-8 w-8 bg-green-500 rounded-md flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">T</span>
-                      </div>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          API Tokens
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">
-                          0
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-5 py-3">
-                  <div className="text-sm">
-                    <a
-                      href="#"
-                      className="font-medium text-green-700 hover:text-green-900"
-                    >
-                      Manage tokens
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="h-8 w-8 bg-purple-500 rounded-md flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">U</span>
-                      </div>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Users
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">
-                          1
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-5 py-3">
-                  <div className="text-sm">
-                    <a
-                      href="#"
-                      className="font-medium text-purple-700 hover:text-purple-900"
-                    >
-                      Manage users
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">
-                Quick Actions
-              </h3>
-              <div className="space-x-3">
-                <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                  Add eBay Connection
-                </button>
-                <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
-                  Create API Token
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                      <InfoCard
+                          title="User Information"
+                          description="Your account details"
+                          icon="👤"
+                          iconBgColor="blue.100"
+                          iconColor="blue.600"
+                      >
+                          <VStack gap={2} align="start">
+                              <Text fontSize="sm" color="gray.600">
+                                  Email: {user.email}
+                              </Text>
+                              <Text fontSize="sm" color="gray.600">
+                                  Role: {user.role}
+                              </Text>
+                              {user.name && (
+                                  <Text fontSize="sm" color="gray.600">
+                                      Name: {user.name}
+                                  </Text>
+                              )}
+                          </VStack>
+                      </InfoCard>
+                  </Grid>
+              </VStack>
+          </Box>
+      </Box>
   );
 }

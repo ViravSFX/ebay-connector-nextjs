@@ -36,7 +36,6 @@ export default function Home() {
           <Spinner
             size="lg"
             color="blue.500"
-            thickness="4px"
           />
           <Text fontSize="sm" color="gray.500">
             Redirecting...
