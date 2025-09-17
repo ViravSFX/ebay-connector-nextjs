@@ -35,8 +35,8 @@ export async function GET(request: NextRequest) {
       ? 'https://auth.sandbox.ebay.com/oauth2/authorize'
       : 'https://auth.ebay.com/oauth2/authorize';
 
-    // Use only the most basic scope for testing
-    const scopes = 'https://api.ebay.com/oauth/api_scope';
+    // Include identity scope to get user information
+    const scopes = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/commerce.identity.readonly';
 
     const authParams = new URLSearchParams({
       client_id: process.env.EBAY_CLIENT_ID,
