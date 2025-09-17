@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { EbayOAuthService } from '../../../lib/services/ebayOAuth';
+import { EbayOAuthService } from '../../../lib/services/ebayOAuthService';
 import { requireAuth } from '../../../lib/middleware/auth';
 
 export const GET = requireAuth(async (request: NextRequest, user) => {
