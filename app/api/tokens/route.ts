@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/app/lib/middleware/requireAuth';
 import { ApiTokenService, CreateApiTokenData } from '@/app/lib/services/apiTokenService';
 
-// GET /api/tokens - Get user's API tokens
+// GET /api/tokens - Get user's API tokens with filtering
 export const GET = requireAuth(async (request: NextRequest, user) => {
   try {
-    const tokens = await ApiTokenService.getUserTokens(user.id);
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status') as 'active' | 'inactive' | 'all' | null;
+
+    const tokens = await ApiTokenService.getUserTokens(user.id, {
+      status: status || 'all'
+    });
 
     // Don't return the actual token string for security
     const sanitizedTokens = tokens.map(token => ({
@@ -14,6 +19,7 @@ export const GET = requireAuth(async (request: NextRequest, user) => {
       token: `${token.token.substring(0, 12)}...${token.token.substring(token.token.length - 4)}`, // Show first 12 and last 4 chars
       permissions: token.permissions,
       isActive: token.isActive,
+      isDeleted: token.isDeleted,
       lastUsedAt: token.lastUsedAt,
       expiresAt: token.expiresAt,
       createdAt: token.createdAt,

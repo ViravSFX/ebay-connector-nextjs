@@ -30,6 +30,7 @@ model ApiToken {
   userId      String
   permissions Json      @default("{}")
   isActive    Boolean   @default(true)
+  isDeleted   Boolean   @default(false)
   lastUsedAt  DateTime?
   expiresAt   DateTime?
   createdAt   DateTime  @default(now())

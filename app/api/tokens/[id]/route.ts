@@ -116,7 +116,7 @@ export const PUT = requireAuth(async (
   }
 });
 
-// DELETE /api/tokens/[id] - Revoke API token
+// DELETE /api/tokens/[id] - Soft delete API token
 export const DELETE = requireAuth(async (
   request: NextRequest,
   user,
@@ -125,17 +125,17 @@ export const DELETE = requireAuth(async (
   const params = await context.params;
 
   try {
-    await ApiTokenService.revokeToken(params.id, user.id);
+    await ApiTokenService.deleteToken(params.id, user.id);
 
     return NextResponse.json({
       success: true,
-      message: 'Token revoked successfully'
+      message: 'Token deleted successfully'
     });
 
   } catch (error) {
-    console.error('Revoke token error:', error);
+    console.error('Delete token error:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to revoke token' },
+      { success: false, message: 'Failed to delete token' },
       { status: 500 }
     );
   }

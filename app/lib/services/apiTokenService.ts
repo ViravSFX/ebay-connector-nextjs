@@ -17,6 +17,7 @@ export interface ApiTokenResponse {
   token: string;
   permissions: any;
   isActive: boolean;
+  isDeleted: boolean;
   lastUsedAt: Date | null;
   expiresAt: Date | null;
   createdAt: Date;
@@ -63,7 +64,7 @@ export class ApiTokenService {
         userId,
         name: data.name,
         token,
-        permissions: defaultPermissions,
+        permissions: JSON.parse(JSON.stringify(defaultPermissions)),
         expiresAt: data.expiresAt
       }
     });
@@ -72,11 +73,28 @@ export class ApiTokenService {
   }
 
   /**
-   * Get all API tokens for a user
+   * Get all API tokens for a user (excludes deleted tokens by default)
    */
-  static async getUserTokens(userId: string): Promise<ApiTokenResponse[]> {
+  static async getUserTokens(
+    userId: string,
+    options?: {
+      status?: 'active' | 'inactive' | 'all'
+    }
+  ): Promise<ApiTokenResponse[]> {
+    const whereClause: any = {
+      userId,
+      isDeleted: false // Exclude deleted tokens by default
+    };
+
+    // Add status filtering
+    if (options?.status === 'active') {
+      whereClause.isActive = true;
+    } else if (options?.status === 'inactive') {
+      whereClause.isActive = false;
+    }
+
     const tokens = await prisma.apiToken.findMany({
-      where: { userId },
+      where: whereClause,
       orderBy: { createdAt: 'desc' }
     });
 
@@ -87,10 +105,11 @@ export class ApiTokenService {
    * Get API token by token string (for authentication)
    */
   static async getTokenByString(token: string): Promise<ApiTokenWithUser | null> {
-    const apiToken = await prisma.apiToken.findUnique({
+    const apiToken = await prisma.apiToken.findFirst({
       where: {
         token,
-        isActive: true
+        isActive: true,
+        isDeleted: false // Exclude deleted tokens
       },
       include: {
         user: {
@@ -140,6 +159,59 @@ export class ApiTokenService {
   }
 
   /**
+   * Activate an API token
+   */
+  static async activateToken(tokenId: string, userId: string): Promise<ApiTokenResponse> {
+    const updatedToken = await prisma.apiToken.update({
+      where: {
+        id: tokenId,
+        userId
+      },
+      data: {
+        isActive: true,
+        updatedAt: new Date()
+      }
+    });
+
+    return updatedToken as ApiTokenResponse;
+  }
+
+  /**
+   * Deactivate an API token
+   */
+  static async deactivateToken(tokenId: string, userId: string): Promise<ApiTokenResponse> {
+    const updatedToken = await prisma.apiToken.update({
+      where: {
+        id: tokenId,
+        userId
+      },
+      data: {
+        isActive: false,
+        updatedAt: new Date()
+      }
+    });
+
+    return updatedToken as ApiTokenResponse;
+  }
+
+  /**
+   * Soft delete an API token (mark as deleted)
+   */
+  static async deleteToken(tokenId: string, userId: string): Promise<void> {
+    await prisma.apiToken.update({
+      where: {
+        id: tokenId,
+        userId
+      },
+      data: {
+        isActive: false,
+        isDeleted: true,
+        updatedAt: new Date()
+      }
+    });
+  }
+
+  /**
    * Update token details (name, permissions, expiresAt)
    */
   static async updateTokenPermissions(
@@ -163,7 +235,7 @@ export class ApiTokenService {
       dataToUpdate.name = name;
     }
     if (permissions !== undefined) {
-      dataToUpdate.permissions = permissions;
+      dataToUpdate.permissions = JSON.parse(JSON.stringify(permissions));
     }
     if (expiresAt !== undefined) {
       dataToUpdate.expiresAt = expiresAt;
@@ -187,7 +259,8 @@ export class ApiTokenService {
     const token = await prisma.apiToken.findFirst({
       where: {
         id: tokenId,
-        userId
+        userId,
+        isDeleted: false // Exclude deleted tokens
       }
     });
 
@@ -253,7 +326,8 @@ export class ApiTokenService {
     const activeTokens = await prisma.apiToken.count({
       where: {
         userId,
-        isActive: true
+        isActive: true,
+        isDeleted: false // Exclude deleted tokens
       }
     });
 
