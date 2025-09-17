@@ -1,12 +1,13 @@
 'use client';
 
 import { VStack, HStack, Box, Text } from "@chakra-ui/react";
-import { MdOutlineSpaceDashboard, MdLogout, MdOutlinePeople } from "react-icons/md";
+import { MdOutlineSpaceDashboard, MdLogout, MdOutlinePeople, MdVpnKey } from "react-icons/md";
 import { usePathname, useRouter } from "next/navigation";
 
 const navigationItems = [
   { text: "Dashboard", icon: MdOutlineSpaceDashboard, path: "/" },
   { text: "Users", icon: MdOutlinePeople, path: "/users" },
+  { text: "API Tokens", icon: MdVpnKey, path: "/api-tokens" },
   { text: "Logout", icon: MdLogout, path: "/login" },
 ];
 
@@ -73,6 +74,10 @@ export function Navigation({ collapse }: NavigationProps) {
     // For Users, check if we're on users page
     if (item.text === "Users") {
       return pathname === "/users";
+    }
+    // For API Tokens, check if we're on api-tokens page
+    if (item.text === "API Tokens") {
+      return pathname === "/api-tokens";
     }
     // For Logout, never mark as active
     if (item.text === "Logout") {

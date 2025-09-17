@@ -16,6 +16,7 @@ model User {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   apiTokens       ApiToken[]
+  userPlan        UserPlan?
   ebayConnections EbayConnection[]
   ebayUserTokens  EbayUserToken[]
 
@@ -23,13 +24,18 @@ model User {
 }
 
 model ApiToken {
-  id        String    @id @default(cuid())
-  name      String
-  token     String    @unique
-  userId    String
-  createdAt DateTime  @default(now())
-  lastUsed  DateTime?
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  name        String
+  token       String    @unique
+  userId      String
+  permissions Json      @default("{}")
+  isActive    Boolean   @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiUsage    ApiUsage[]
 
   @@map("api_tokens")
 }
@@ -64,6 +70,41 @@ model EbayUserToken {
 
   @@unique([userId, connectionId])
   @@map("ebay_user_tokens")
+}
+
+model UserPlan {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  planName           String    @default("FREE")
+  monthlyApiLimit    Int       @default(1000)
+  allowedEndpoints   Json      @default("[]")
+  isActive           Boolean   @default(true)
+  startedAt          DateTime  @default(now())
+  expiresAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_plans")
+}
+
+model ApiUsage {
+  id                    String    @id @default(cuid())
+  apiTokenId            String
+  endpoint              String
+  method                String
+  statusCode            Int
+  responseTimeMs        Int?
+  errorMessage          String?
+  requestIp             String?
+  userAgent             String?
+  createdAt             DateTime  @default(now())
+  apiToken              ApiToken  @relation(fields: [apiTokenId], references: [id], onDelete: Cascade)
+
+  @@index([apiTokenId])
+  @@index([createdAt])
+  @@index([endpoint])
+  @@map("api_usage")
 }
 
 enum UserRole {

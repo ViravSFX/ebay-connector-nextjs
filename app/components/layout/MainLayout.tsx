@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Box, Flex, HStack, IconButton, Text } from '@chakra-ui/react';
+import React from 'react';
+import { Flex, HStack } from '@chakra-ui/react';
 import Footer from './Footer';
 import Sidebar from './Sidebar';
 
