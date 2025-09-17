@@ -2,9 +2,9 @@ import { NextRequest } from 'next/server';
 import { TokenExtractor, AuthenticatedUser } from '../auth/tokenExtractor';
 
 export function requireAuth(
-  handler: (request: NextRequest, user: AuthenticatedUser) => Promise<Response>
+  handler: (request: NextRequest, user: AuthenticatedUser, context?: any) => Promise<Response>
 ) {
-  return async (request: NextRequest) => {
+  return async (request: NextRequest, context?: any) => {
     const { user, error } = await TokenExtractor.extractAndVerifyToken(request);
 
     if (!user) {
@@ -20,6 +20,6 @@ export function requireAuth(
       );
     }
 
-    return handler(request, user);
+    return handler(request, user, context);
   };
 }

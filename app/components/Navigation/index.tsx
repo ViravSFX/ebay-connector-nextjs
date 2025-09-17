@@ -1,11 +1,12 @@
 'use client';
 
 import { VStack, HStack, Box, Text } from "@chakra-ui/react";
-import { MdOutlineSpaceDashboard, MdLogout } from "react-icons/md";
+import { MdOutlineSpaceDashboard, MdLogout, MdOutlinePeople } from "react-icons/md";
 import { usePathname, useRouter } from "next/navigation";
 
 const navigationItems = [
   { text: "Dashboard", icon: MdOutlineSpaceDashboard, path: "/" },
+  { text: "Users", icon: MdOutlinePeople, path: "/users" },
   { text: "Logout", icon: MdLogout, path: "/login" },
 ];
 
@@ -68,6 +69,10 @@ export function Navigation({ collapse }: NavigationProps) {
     // For Dashboard, check if we're on homepage
     if (item.text === "Dashboard") {
       return pathname === "/" || pathname === "/dashboard";
+    }
+    // For Users, check if we're on users page
+    if (item.text === "Users") {
+      return pathname === "/users";
     }
     // For Logout, never mark as active
     if (item.text === "Logout") {
