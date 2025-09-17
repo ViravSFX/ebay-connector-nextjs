@@ -64,7 +64,7 @@ export class ApiTokenService {
         userId,
         name: data.name,
         token,
-        permissions: JSON.parse(JSON.stringify(defaultPermissions)),
+        permissions: defaultPermissions as any,
         expiresAt: data.expiresAt
       }
     });
@@ -235,7 +235,7 @@ export class ApiTokenService {
       dataToUpdate.name = name;
     }
     if (permissions !== undefined) {
-      dataToUpdate.permissions = JSON.parse(JSON.stringify(permissions));
+      dataToUpdate.permissions = permissions as any;
     }
     if (expiresAt !== undefined) {
       dataToUpdate.expiresAt = expiresAt;
