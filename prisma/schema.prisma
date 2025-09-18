@@ -8,88 +8,88 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(cuid())
-  email           String           @unique
-  password        String
-  name            String?
-  role            UserRole         @default(USER)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  apiTokens       ApiToken[]
-  userPlan        UserPlan?
-  ebayUserTokens  EbayUserToken[]
+  id             String          @id @default(cuid())
+  email          String          @unique
+  password       String
+  name           String?
+  role           UserRole        @default(USER)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  apiTokens      ApiToken[]
+  ebayUserTokens EbayUserToken[]
+  userPlan       UserPlan?
 
   @@map("users")
 }
 
 model ApiToken {
-  id          String    @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
-  token       String    @unique
+  token       String     @unique
   userId      String
-  permissions Json      @default("{}")
-  isActive    Boolean   @default(true)
-  isDeleted   Boolean   @default(false)
-  lastUsedAt  DateTime?
+  createdAt   DateTime   @default(now())
   expiresAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isActive    Boolean    @default(true)
+  lastUsedAt  DateTime?
+  permissions Json       @default("{}")
+  updatedAt   DateTime   @updatedAt
+  isDeleted   Boolean    @default(false)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   apiUsage    ApiUsage[]
 
   @@map("api_tokens")
 }
 
 model EbayUserToken {
-  id           String   @id @default(cuid())
-  userId       String
-  ebayUserId   String
-  ebayUsername String?
+  id           String    @id @default(cuid())
   accessToken  String
   refreshToken String?
   expiresAt    DateTime
-  tokenType    String   @default("Bearer")
-  scopes       Json     @default("[]")
-  status       String   @default("active") // active, expired, revoked
-  friendlyName String?
-  tags         Json     @default("[]")
+  tokenType    String    @default("Bearer")
+  userId       String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  ebayUserId   String
+  ebayUsername String?
   lastUsedAt   DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scopes       Json      @default("[]")
+  status       String    @default("active")
+  friendlyName String?
+  tags         Json      @default("[]")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, ebayUserId])
   @@map("ebay_user_tokens")
 }
 
 model UserPlan {
-  id                 String    @id @default(cuid())
-  userId             String    @unique
-  planName           String    @default("FREE")
-  monthlyApiLimit    Int       @default(1000)
-  allowedEndpoints   Json      @default("[]")
-  isActive           Boolean   @default(true)
-  startedAt          DateTime  @default(now())
-  expiresAt          DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  planName         String    @default("FREE")
+  monthlyApiLimit  Int       @default(1000)
+  allowedEndpoints Json      @default("[]")
+  isActive         Boolean   @default(true)
+  startedAt        DateTime  @default(now())
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_plans")
 }
 
 model ApiUsage {
-  id                    String    @id @default(cuid())
-  apiTokenId            String
-  endpoint              String
-  method                String
-  statusCode            Int
-  responseTimeMs        Int?
-  errorMessage          String?
-  requestIp             String?
-  userAgent             String?
-  createdAt             DateTime  @default(now())
-  apiToken              ApiToken  @relation(fields: [apiTokenId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  apiTokenId     String
+  endpoint       String
+  method         String
+  statusCode     Int
+  responseTimeMs Int?
+  errorMessage   String?
+  requestIp      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+  apiToken       ApiToken @relation(fields: [apiTokenId], references: [id], onDelete: Cascade)
 
   @@index([apiTokenId])
   @@index([createdAt])
@@ -97,8 +97,38 @@ model ApiUsage {
   @@map("api_usage")
 }
 
+model DebugLog {
+  id           String    @id @default(cuid())
+  timestamp    DateTime  @default(now())
+  level        LogLevel  @default(INFO)
+  category     String
+  message      String
+  metadata     Json?
+  method       String?
+  url          String?
+  statusCode   Int?
+  duration     Int?      // in milliseconds
+  userAgent    String?
+  ip           String?
+  userId       String?
+  createdAt    DateTime  @default(now())
+
+  @@index([timestamp])
+  @@index([level])
+  @@index([category])
+  @@index([createdAt])
+  @@map("debug_logs")
+}
+
 enum UserRole {
   SUPER_ADMIN
   ADMIN
   USER
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
 }

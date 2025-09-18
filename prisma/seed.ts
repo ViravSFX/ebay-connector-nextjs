@@ -1,11 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import { PasswordService } from '../app/lib/services/auth';
-import { debugLogService } from '../app/lib/services/debugLogService';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  debugLogService.info('SEED', '🌱 Starting database seed...');
+  console.log('🌱 Starting database seed...');
 
   // Create Super Admin user
   const superAdminEmail = 'superadmin@ebayconnector.com';
@@ -23,7 +22,7 @@ async function main() {
     });
 
     if (existingSuperAdmin) {
-      debugLogService.info('SEED', '👤 Super Admin already exists', {
+      console.log('👤 Super Admin already exists:', {
         email: existingSuperAdmin.email,
         role: existingSuperAdmin.role,
       });
@@ -36,7 +35,7 @@ async function main() {
             role: 'SUPER_ADMIN',
           },
         });
-        debugLogService.info('SEED', '✅ Updated existing user to SUPER_ADMIN role');
+        console.log('✅ Updated existing user to SUPER_ADMIN role');
       }
       return;
     }
@@ -61,7 +60,7 @@ async function main() {
       }
     });
 
-    debugLogService.info('SEED', '✅ Super Admin created successfully', {
+    console.log('✅ Super Admin created successfully:', {
       id: superAdmin.id,
       email: superAdmin.email,
       name: superAdmin.name,
@@ -70,17 +69,17 @@ async function main() {
     });
 
   } catch (error) {
-    debugLogService.error('SEED', `❌ Error creating Super Admin: ${error}`);
+    console.error('❌ Error creating Super Admin:', error);
     throw error;
   }
 }
 
 main()
   .catch((e) => {
-    debugLogService.error('SEED', `💥 Seed failed: ${e}`);
+    console.error('💥 Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
-    debugLogService.info('SEED', '🏁 Database seed completed');
+    console.log('🏁 Database seed completed');
   });

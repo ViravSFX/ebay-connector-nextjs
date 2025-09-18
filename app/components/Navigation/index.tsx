@@ -1,16 +1,10 @@
 'use client';
 
 import { VStack, HStack, Box, Text } from "@chakra-ui/react";
-import { MdOutlineSpaceDashboard, MdLogout, MdOutlinePeople, MdVpnKey, MdOutlineStore } from "react-icons/md";
+import { MdOutlineSpaceDashboard, MdLogout, MdOutlinePeople, MdVpnKey, MdOutlineStore, MdBugReport } from "react-icons/md";
 import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
-const navigationItems = [
-  { text: "Dashboard", icon: MdOutlineSpaceDashboard, path: "/" },
-  { text: "Users", icon: MdOutlinePeople, path: "/users" },
-  { text: "API Tokens", icon: MdVpnKey, path: "/api-tokens" },
-  { text: "eBay Accounts", icon: MdOutlineStore, path: "/ebay-connections" },
-  { text: "Logout", icon: MdLogout, path: "/login" },
-];
 
 interface NavigationItemProps {
   icon: any;
@@ -56,6 +50,42 @@ interface NavigationProps {
 export function Navigation({ collapse }: NavigationProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  // Check if user is super admin
+  useEffect(() => {
+    const checkSuperAdmin = async () => {
+      try {
+        const response = await fetch('/api/debug/logs');
+        if (response.status === 200) {
+          setIsSuperAdmin(true);
+        } else {
+          setIsSuperAdmin(false);
+        }
+      } catch (error) {
+        setIsSuperAdmin(false);
+      }
+    };
+
+    checkSuperAdmin();
+  }, []);
+
+  // Get navigation items (including debug logs for super admins)
+  const getNavigationItems = () => {
+    const baseItems = [
+      { text: "Dashboard", icon: MdOutlineSpaceDashboard, path: "/" },
+      { text: "Users", icon: MdOutlinePeople, path: "/users" },
+      { text: "API Tokens", icon: MdVpnKey, path: "/api-tokens" },
+      { text: "eBay Accounts", icon: MdOutlineStore, path: "/ebay-connections" },
+    ];
+
+    if (isSuperAdmin) {
+      baseItems.push({ text: "Debug Logs", icon: MdBugReport, path: "/debug-logs" });
+    }
+
+    baseItems.push({ text: "Logout", icon: MdLogout, path: "/login" });
+    return baseItems;
+  };
 
   const handleItemClick = (item: any) => {
     if (item.text === "Logout") {
@@ -84,6 +114,10 @@ export function Navigation({ collapse }: NavigationProps) {
     if (item.text === "eBay Accounts") {
       return pathname === "/ebay-connections";
     }
+    // For Debug Logs, check if we're on debug-logs page
+    if (item.text === "Debug Logs") {
+      return pathname === "/debug-logs";
+    }
     // For Logout, never mark as active
     if (item.text === "Logout") {
       return false;
@@ -92,9 +126,11 @@ export function Navigation({ collapse }: NavigationProps) {
     return pathname === item.path;
   };
 
+  const navItems = getNavigationItems();
+
   return (
     <VStack gap={1} align="stretch" mt={4}>
-      {navigationItems.map((item, index) => (
+      {navItems.map((item, index) => (
         <NavigationItem
           key={index}
           icon={item.icon}
