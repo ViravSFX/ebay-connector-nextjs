@@ -13,38 +13,78 @@ import {
   Badge,
   Text,
 } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import EbayScopeSelector from './EbayScopeSelector';
-import { DEFAULT_SCOPES } from '@/app/lib/constants/ebayScopes';
+import { EbayAccount } from '@/app/hooks/useEbayAccounts';
 
-interface EbayAccountFormData {
+interface EditEbayAccountFormData {
   friendlyName: string;
   tags: string[];
   ebayUsername?: string;
   selectedScopes: string[];
 }
 
-interface AddEbayAccountModalProps {
+interface EditEbayAccountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: EbayAccountFormData) => void;
+  onSubmit: (data: EditEbayAccountFormData) => void;
   isSubmitting: boolean;
+  account: EbayAccount | null;
 }
 
-export default function AddEbayAccountModal({
+export default function EditEbayAccountModal({
   isOpen,
   onClose,
   onSubmit,
   isSubmitting,
-}: AddEbayAccountModalProps) {
-  const [formData, setFormData] = useState<EbayAccountFormData>({
+  account,
+}: EditEbayAccountModalProps) {
+  const [formData, setFormData] = useState<EditEbayAccountFormData>({
     friendlyName: '',
     tags: [],
     ebayUsername: '',
-    selectedScopes: DEFAULT_SCOPES,
+    selectedScopes: [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [tagInput, setTagInput] = useState('');
+
+  useEffect(() => {
+    if (account && isOpen) {
+      // Parse JSON fields safely
+      const parseTags = (tags: any): string[] => {
+        if (Array.isArray(tags)) return tags;
+        if (typeof tags === 'string') {
+          try {
+            const parsed = JSON.parse(tags);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      };
+
+      const parseScopes = (scopes: any): string[] => {
+        if (Array.isArray(scopes)) return scopes;
+        if (typeof scopes === 'string') {
+          try {
+            const parsed = JSON.parse(scopes);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      };
+
+      setFormData({
+        friendlyName: account.friendlyName || '',
+        tags: parseTags(account.tags),
+        ebayUsername: account.ebayUsername || '',
+        selectedScopes: parseScopes(account.scopes),
+      });
+    }
+  }, [account, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,12 +105,6 @@ export default function AddEbayAccountModal({
   };
 
   const handleClose = () => {
-    setFormData({
-      friendlyName: '',
-      tags: [],
-      ebayUsername: '',
-      selectedScopes: DEFAULT_SCOPES,
-    });
     setErrors({});
     setTagInput('');
     onClose();
@@ -101,13 +135,13 @@ export default function AddEbayAccountModal({
   };
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={() => handleClose()}  scrollBehavior="inside">
+    <Dialog.Root open={isOpen} onOpenChange={() => handleClose()} scrollBehavior="inside">
       <Dialog.Backdrop />
       <Dialog.Positioner>
         <Dialog.Content maxW="11/12" p={6}>
           <Dialog.Header>
             <Dialog.Title fontSize="xl" fontWeight="bold">
-              Add eBay Account
+              Edit eBay Account
             </Dialog.Title>
           </Dialog.Header>
 
@@ -228,19 +262,19 @@ export default function AddEbayAccountModal({
                   disabled={isSubmitting}
                 />
 
-                {/* Connection Info */}
+                {/* Update Info */}
                 <VStack align="stretch" gap={4}>
                   <Heading size="md" color="gray.700">
-                    Next Steps
+                    Important Notes
                   </Heading>
-                  <VStack align="stretch" gap={3} p={4} bg="orange.50" borderRadius="md" border="1px solid" borderColor="orange.200">
-                    <Text fontSize="sm" fontWeight="medium" color="orange.800">
-                      After creating this account:
+                  <VStack align="stretch" gap={3} p={4} bg="blue.50" borderRadius="md" border="1px solid" borderColor="blue.200">
+                    <Text fontSize="sm" fontWeight="medium" color="blue.800">
+                      About updating permissions:
                     </Text>
-                    <VStack align="stretch" gap={1} fontSize="sm" color="orange.700">
-                      <Text>• Click "Connect Account" to authorize with eBay</Text>
-                      <Text>• Complete the OAuth flow with your selected permissions</Text>
-                      <Text>• Your account will be ready to use for API calls</Text>
+                    <VStack align="stretch" gap={1} fontSize="sm" color="blue.700">
+                      <Text>• Changing scopes may require re-authentication with eBay</Text>
+                      <Text>• You may need to reconnect the account after saving changes</Text>
+                      <Text>• Current tokens will remain valid until they expire</Text>
                     </VStack>
                   </VStack>
                 </VStack>
@@ -258,12 +292,12 @@ export default function AddEbayAccountModal({
                 Cancel
               </Button>
               <Button
-                colorPalette="orange"
+                colorPalette="blue"
                 onClick={handleSubmit}
                 loading={isSubmitting}
-                loadingText="Creating..."
+                loadingText="Updating..."
               >
-                Create Account
+                Update Account
               </Button>
             </HStack>
           </Dialog.Footer>

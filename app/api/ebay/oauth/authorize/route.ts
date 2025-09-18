@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ebayOAuthService } from '@/app/lib/services/ebayOAuth';
+import prisma from '@/app/lib/services/database';
+import { EBAY_OAUTH_SCOPES } from '@/app/lib/constants/ebayScopes';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,6 +22,45 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Fetch the account to get its selected scopes
+    const account = await prisma.ebayUserToken.findUnique({
+      where: { id: accountId },
+      select: { scopes: true }
+    });
+
+    if (!account) {
+      return NextResponse.json(
+        { success: false, message: 'Account not found' },
+        { status: 404 }
+      );
+    }
+
+    // Parse the selected scopes from the database
+    const selectedScopeIds = Array.isArray(account.scopes)
+      ? account.scopes
+      : typeof account.scopes === 'string'
+        ? (account.scopes ? JSON.parse(account.scopes) : [])
+        : [];
+
+    // Convert scope IDs to eBay scope URLs
+    const accountScopeUrls = selectedScopeIds
+      .map((scopeId: string) => {
+        const scope = EBAY_OAUTH_SCOPES.find(s => s.id === scopeId);
+        return scope ? scope.url : null;
+      })
+      .filter(Boolean); // Remove any null values
+
+    // Always include basic API scope if not already present
+    const basicScope = 'https://api.ebay.com/oauth/api_scope';
+    if (!accountScopeUrls.includes(basicScope)) {
+      accountScopeUrls.unshift(basicScope);
+    }
+
+    // Use account-specific scopes or fall back to basic scopes
+    const scopes = accountScopeUrls.length > 0
+      ? accountScopeUrls.join(' ')
+      : 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/commerce.identity.readonly';
+
     // Generate a random state parameter for security
     const state = `${accountId}_${Math.random().toString(36).substring(2, 15)}`;
 
@@ -27,9 +68,6 @@ export async function GET(request: NextRequest) {
     const baseUrl = process.env.EBAY_SANDBOX === 'true'
       ? 'https://auth.sandbox.ebay.com/oauth2/authorize'
       : 'https://auth.ebay.com/oauth2/authorize';
-
-    // Include identity scope to get user information
-    const scopes = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/commerce.identity.readonly';
 
     const authParams = new URLSearchParams({
       client_id: process.env.EBAY_CLIENT_ID,

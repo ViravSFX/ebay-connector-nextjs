@@ -27,7 +27,7 @@ interface UseEbayAccountsReturn {
   toggleAccountStatus: (accountId: string, isActive: boolean) => Promise<void>;
   connectAccount: (accountId: string) => Promise<void>;
   updateAccount: (accountId: string, data: Partial<EbayAccount>) => Promise<void>;
-  createAccount: (data: { friendlyName: string; description?: string; tags: string[]; ebayUsername?: string; selectedScopes: string[]; }) => Promise<void>;
+  createAccount: (data: { friendlyName: string; tags: string[]; ebayUsername?: string; selectedScopes: string[]; }) => Promise<void>;
 }
 
 export function useEbayAccounts(): UseEbayAccountsReturn {
@@ -182,7 +182,7 @@ export function useEbayAccounts(): UseEbayAccountsReturn {
     }
   }, []);
 
-  const createAccount = useCallback(async (data: { friendlyName: string; description?: string; tags: string[]; ebayUsername?: string; selectedScopes: string[]; }) => {
+  const createAccount = useCallback(async (data: { friendlyName: string; tags: string[]; ebayUsername?: string; selectedScopes: string[]; }) => {
     try {
       setLoading(true);
       const response = await fetch('/api/ebay-accounts', {

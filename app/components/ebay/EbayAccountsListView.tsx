@@ -25,6 +25,7 @@ interface EbayAccountsListViewProps {
   onConnect?: (accountId: string) => void;
   onToggleStatus?: (accountId: string, isActive: boolean) => void;
   onDelete?: (accountId: string) => void;
+  onEdit?: (account: EbayAccount) => void;
   isConnecting?: Record<string, boolean>;
   isDeleting?: Record<string, boolean>;
 }
@@ -36,6 +37,7 @@ export default function EbayAccountsListView({
   onConnect,
   onToggleStatus,
   onDelete,
+  onEdit,
   isConnecting = {},
   isDeleting = {},
 }: EbayAccountsListViewProps) {
@@ -184,6 +186,7 @@ export default function EbayAccountsListView({
                 onConnect={onConnect}
                 onToggleStatus={onToggleStatus}
                 onDelete={onDelete}
+                onEdit={onEdit}
                 isConnecting={isConnecting[account.id]}
                 isDeleting={isDeleting[account.id]}
               />

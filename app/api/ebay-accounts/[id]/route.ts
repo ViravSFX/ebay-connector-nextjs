@@ -56,9 +56,16 @@ export async function GET(
       );
     }
 
+    // Parse JSON fields for client consumption
+    const parsedAccount = {
+      ...ebayAccount,
+      scopes: typeof ebayAccount.scopes === 'string' ? JSON.parse(ebayAccount.scopes) : ebayAccount.scopes,
+      tags: typeof ebayAccount.tags === 'string' ? JSON.parse(ebayAccount.tags) : ebayAccount.tags,
+    };
+
     return NextResponse.json({
       success: true,
-      data: ebayAccount,
+      data: parsedAccount,
     });
   } catch (error) {
     console.error('Error fetching eBay account:', error);
@@ -95,6 +102,17 @@ export async function PUT(
 
     const updateData = await request.json();
 
+    // Convert arrays to JSON strings for database storage
+    const processedData = {
+      ...updateData,
+      scopes: Array.isArray(updateData.selectedScopes) ? JSON.stringify(updateData.selectedScopes) : updateData.scopes,
+      tags: Array.isArray(updateData.tags) ? JSON.stringify(updateData.tags) : updateData.tags,
+      updatedAt: new Date(),
+    };
+
+    // Remove selectedScopes as it's not a database field
+    delete processedData.selectedScopes;
+
     // Await params and update eBay account
     const { id } = await params;
     const ebayAccount = await prisma.ebayUserToken.update({
@@ -102,10 +120,7 @@ export async function PUT(
         id: id,
         userId: decoded.userId,
       },
-      data: {
-        ...updateData,
-        updatedAt: new Date(),
-      },
+      data: processedData,
       select: {
         id: true,
         ebayUserId: true,
@@ -122,10 +137,17 @@ export async function PUT(
       },
     });
 
+    // Parse JSON fields for client consumption
+    const parsedAccount = {
+      ...ebayAccount,
+      scopes: typeof ebayAccount.scopes === 'string' ? JSON.parse(ebayAccount.scopes) : ebayAccount.scopes,
+      tags: typeof ebayAccount.tags === 'string' ? JSON.parse(ebayAccount.tags) : ebayAccount.tags,
+    };
+
     return NextResponse.json({
       success: true,
       message: 'eBay account updated successfully',
-      data: ebayAccount,
+      data: parsedAccount,
     });
   } catch (error) {
     console.error('Error updating eBay account:', error);

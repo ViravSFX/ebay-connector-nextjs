@@ -47,9 +47,16 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Parse JSON fields for client consumption
+    const parsedAccounts = ebayAccounts.map(account => ({
+      ...account,
+      scopes: typeof account.scopes === 'string' ? JSON.parse(account.scopes) : account.scopes,
+      tags: typeof account.tags === 'string' ? JSON.parse(account.tags) : account.tags,
+    }));
+
     return NextResponse.json({
       success: true,
-      data: ebayAccounts,
+      data: parsedAccounts,
     });
   } catch (error) {
     console.error('Error fetching eBay accounts:', error);
@@ -93,7 +100,6 @@ export async function POST(request: NextRequest) {
       status = 'inactive', // Default to inactive until OAuth is completed
       friendlyName,
       tags = [],
-      description,
     } = await request.json();
 
     // Use selectedScopes if provided, otherwise fall back to scopes

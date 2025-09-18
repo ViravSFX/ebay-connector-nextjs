@@ -6,10 +6,13 @@ import { MdAdd } from "react-icons/md";
 import PageHeader from "@/app/components/common/PageHeader";
 import EbayAccountsListView from "../components/ebay/EbayAccountsListView";
 import AddEbayAccountModal from "../components/ebay/AddEbayAccountModal";
+import EditEbayAccountModal from "../components/ebay/EditEbayAccountModal";
 import { useEbayAccounts, type EbayAccount } from "../hooks/useEbayAccounts";
 
 export default function EbayConnectionsPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedAccount, setSelectedAccount] = useState<EbayAccount | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [urlMessage, setUrlMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -25,6 +28,7 @@ export default function EbayConnectionsPage() {
         toggleAccountStatus,
         connectAccount,
         createAccount,
+        updateAccount,
     } = useEbayAccounts();
 
     // Handle URL parameters for success/error messages
@@ -97,6 +101,26 @@ export default function EbayConnectionsPage() {
         deleteAccount(accountId);
     };
 
+    const handleEdit = (account: EbayAccount) => {
+        setSelectedAccount(account);
+        setIsEditModalOpen(true);
+    };
+
+    const handleEditAccountSubmit = async (data: any) => {
+        if (!selectedAccount) return;
+
+        try {
+            setIsSubmitting(true);
+            await updateAccount(selectedAccount.id, data);
+            setIsEditModalOpen(false);
+            setSelectedAccount(null);
+        } catch (error) {
+            console.error('Error updating account:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <Box p={8}>
             <VStack gap={6} align="stretch">
@@ -142,6 +166,7 @@ export default function EbayConnectionsPage() {
                     onConnect={handleConnect}
                     onToggleStatus={handleToggleStatus}
                     onDelete={handleDelete}
+                    onEdit={handleEdit}
                     isConnecting={isConnecting}
                     isDeleting={isDeleting}
                 />
@@ -152,6 +177,18 @@ export default function EbayConnectionsPage() {
                     onClose={() => setIsAddModalOpen(false)}
                     onSubmit={handleAddAccountSubmit}
                     isSubmitting={isSubmitting}
+                />
+
+                {/* Edit eBay Account Modal */}
+                <EditEbayAccountModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => {
+                        setIsEditModalOpen(false);
+                        setSelectedAccount(null);
+                    }}
+                    onSubmit={handleEditAccountSubmit}
+                    isSubmitting={isSubmitting}
+                    account={selectedAccount}
                 />
             </VStack>
         </Box>

@@ -12,7 +12,7 @@ import {
   Switch,
   Box,
 } from '@chakra-ui/react';
-import { MdDelete, MdVisibility } from 'react-icons/md';
+import { MdDelete, MdVisibility, MdEdit } from 'react-icons/md';
 import { FiGlobe, FiUser, FiClock, FiTag } from 'react-icons/fi';
 import { EbayAccount } from '@/app/hooks/useEbayAccounts';
 
@@ -22,6 +22,7 @@ interface EbayAccountCardProps {
   onConnect?: (accountId: string) => void;
   onToggleStatus?: (accountId: string, isActive: boolean) => void;
   onDelete?: (accountId: string) => void;
+  onEdit?: (account: EbayAccount) => void;
   isDisabled?: boolean;
   isConnecting?: boolean;
   isDeleting?: boolean;
@@ -33,16 +34,19 @@ export default function EbayAccountCard({
   onConnect,
   onToggleStatus,
   onDelete,
+  onEdit,
   isDisabled = false,
   isConnecting = false,
   isDeleting = false,
 }: EbayAccountCardProps) {
   const isActive = account.status === 'active';
   const isExpired = new Date(account.expiresAt) < new Date();
-  const environment = process.env.EBAY_SANDBOX === 'true' ? 'sandbox' : 'production';
+  const environment = process.env.NEXT_PUBLIC_EBAY_SANDBOX === 'true' ? 'sandbox' : 'production';
 
   // Determine if this account has ever been connected to eBay
-  const hasBeenConnected = account.ebayUserId && account.lastUsedAt;
+  const hasBeenConnected = account.ebayUserId &&
+                           account.lastUsedAt &&
+                           !account.ebayUserId.startsWith('placeholder_');
   const isFirstTimeConnection = !hasBeenConnected;
 
   const formatDate = (dateString: string) => {
@@ -117,7 +121,7 @@ export default function EbayAccountCard({
                   Environment
                 </Text>
                 <Badge
-                  colorPalette={environment === 'production' ? 'red' : 'yellow'}
+                  colorPalette={environment === 'production' ? 'yellow' : 'red'}
                   variant="solid"
                   fontSize="xs"
                   borderRadius="6px"
@@ -206,34 +210,52 @@ export default function EbayAccountCard({
             </Button>
 
             <HStack justify="space-between" w="full">
-              <Box onClick={(e) => e.stopPropagation()}>
-                <Switch.Root
-                  size="sm"
-                  checked={isActive}
-                  colorPalette="green"
-                  onCheckedChange={(checked) => onToggleStatus?.(account.id, checked.checked)}
-                >
-                  <Switch.HiddenInput />
-                  <Switch.Control />
-                  <Switch.Label fontSize="sm" ml={2} fontWeight="500">
-                    {isActive ? 'Active' : 'Inactive'}
-                  </Switch.Label>
-                </Switch.Root>
-              </Box>
+              {hasBeenConnected ? (
+                <Box onClick={(e) => e.stopPropagation()}>
+                  <Switch.Root
+                    size="sm"
+                    checked={isActive}
+                    colorPalette="green"
+                    onCheckedChange={(checked) => onToggleStatus?.(account.id, checked.checked)}
+                  >
+                    <Switch.HiddenInput />
+                    <Switch.Control />
+                    <Switch.Label fontSize="sm" ml={2} fontWeight="500">
+                      {isActive ? 'Active' : 'Inactive'}
+                    </Switch.Label>
+                  </Switch.Root>
+                </Box>
+              ) : (
+                <Box />
+              )}
 
-              <Button
-                size="sm"
-                variant="ghost"
-                colorPalette="red"
-                borderRadius="8px"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete?.(account.id);
-                }}
-                loading={isDeleting}
-              >
-                <MdDelete />
-              </Button>
+              <HStack gap={2}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  colorPalette="blue"
+                  borderRadius="8px"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit?.(account);
+                  }}
+                >
+                  <MdEdit />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  colorPalette="red"
+                  borderRadius="8px"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete?.(account.id);
+                  }}
+                  loading={isDeleting}
+                >
+                  <MdDelete />
+                </Button>
+              </HStack>
             </HStack>
           </VStack>
         </VStack>
