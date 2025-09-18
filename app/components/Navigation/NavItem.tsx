@@ -53,12 +53,12 @@ export const NavItem = ({ item, isActive }: NavItemProps) => {
         borderRadius="lg"
         transition="all 0.2s"
         textDecoration="none"
-        bg={isActive ? "blue.50" : "transparent"}
-        color={isActive ? "blue.600" : "gray.600"}
+        bg={isActive ? "orange.300" : "transparent"}
+        color={isActive ? "orange.600" : "gray.600"}
         _hover={{
           textDecoration: "none",
-          bg: isActive ? "blue.100" : "gray.50",
-          color: isActive ? "blue.700" : "gray.800",
+          bg: isActive ? "orange.300" : "gray.50",
+          color: isActive ? "orange.600" : "gray.800",
         }}
         fontWeight={isActive ? "semibold" : "medium"}
         fontSize="sm"

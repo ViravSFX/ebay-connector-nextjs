@@ -16,12 +16,15 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { useState } from 'react';
+import EbayScopeSelector from './EbayScopeSelector';
+import { DEFAULT_SCOPES } from '@/app/lib/constants/ebayScopes';
 
 interface EbayAccountFormData {
   friendlyName: string;
   description?: string;
   tags: string[];
   ebayUsername?: string;
+  selectedScopes: string[];
 }
 
 interface AddEbayAccountModalProps {
@@ -42,6 +45,7 @@ export default function AddEbayAccountModal({
     description: '',
     tags: [],
     ebayUsername: '',
+    selectedScopes: DEFAULT_SCOPES,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [tagInput, setTagInput] = useState('');
@@ -70,6 +74,7 @@ export default function AddEbayAccountModal({
       description: '',
       tags: [],
       ebayUsername: '',
+      selectedScopes: DEFAULT_SCOPES,
     });
     setErrors({});
     setTagInput('');
@@ -101,10 +106,10 @@ export default function AddEbayAccountModal({
   };
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={() => handleClose()}>
+    <Dialog.Root open={isOpen} onOpenChange={() => handleClose()}  scrollBehavior="inside">
       <Dialog.Backdrop />
       <Dialog.Positioner>
-        <Dialog.Content maxW="2xl" p={6}>
+        <Dialog.Content maxW="11/12" p={6}>
           <Dialog.Header>
             <Dialog.Title fontSize="xl" fontWeight="bold">
               Add eBay Account
@@ -235,6 +240,13 @@ export default function AddEbayAccountModal({
                   )}
                 </VStack>
 
+                {/* eBay Permissions Section */}
+                <EbayScopeSelector
+                  selectedScopes={formData.selectedScopes}
+                  onScopeChange={(scopes) => setFormData({ ...formData, selectedScopes: scopes })}
+                  disabled={isSubmitting}
+                />
+
                 {/* Connection Info */}
                 <VStack align="stretch" gap={4}>
                   <Heading size="md" color="gray.700">
@@ -245,8 +257,8 @@ export default function AddEbayAccountModal({
                       After creating this account:
                     </Text>
                     <VStack align="stretch" gap={1} fontSize="sm" color="orange.700">
-                      <Text>• Click "Reconnect Account" to authorize with eBay</Text>
-                      <Text>• Complete the OAuth flow to link your eBay account</Text>
+                      <Text>• Click "Connect Account" to authorize with eBay</Text>
+                      <Text>• Complete the OAuth flow with your selected permissions</Text>
                       <Text>• Your account will be ready to use for API calls</Text>
                     </VStack>
                   </VStack>

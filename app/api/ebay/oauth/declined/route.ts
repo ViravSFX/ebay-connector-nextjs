@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const errorDescription = searchParams.get('error_description');
     const state = searchParams.get('state');
 
-    console.log('eBay OAuth declined:', {
+    console.error('eBay OAuth declined:', {
       error,
       errorDescription,
       state

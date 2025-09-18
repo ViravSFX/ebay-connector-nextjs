@@ -20,13 +20,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Debug: Log environment variables (without exposing sensitive data)
-    console.log('eBay OAuth Debug:', {
-      clientId: process.env.EBAY_CLIENT_ID ? `${process.env.EBAY_CLIENT_ID.substring(0, 10)}...` : 'MISSING',
-      redirectUri: process.env.EBAY_REDIRECT_URI,
-      sandbox: process.env.EBAY_SANDBOX
-    });
-
     // Generate a random state parameter for security
     const state = `${accountId}_${Math.random().toString(36).substring(2, 15)}`;
 
@@ -47,10 +40,6 @@ export async function GET(request: NextRequest) {
     });
 
     const authUrl = `${baseUrl}?${authParams.toString()}`;
-
-    // Debug: Log the complete authorization URL
-    console.log('Generated OAuth URL:', authUrl);
-    console.log('OAuth Parameters:', Object.fromEntries(authParams.entries()));
 
     // Store state in session/cookie for verification
     const response = NextResponse.redirect(authUrl);

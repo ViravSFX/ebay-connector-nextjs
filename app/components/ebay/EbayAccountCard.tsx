@@ -19,27 +19,31 @@ import { EbayAccount } from '@/app/hooks/useEbayAccounts';
 interface EbayAccountCardProps {
   account: EbayAccount;
   onView?: (account: EbayAccount) => void;
-  onReconnect?: (accountId: string) => void;
+  onConnect?: (accountId: string) => void;
   onToggleStatus?: (accountId: string, isActive: boolean) => void;
   onDelete?: (accountId: string) => void;
   isDisabled?: boolean;
-  isReconnecting?: boolean;
+  isConnecting?: boolean;
   isDeleting?: boolean;
 }
 
 export default function EbayAccountCard({
   account,
   onView,
-  onReconnect,
+  onConnect,
   onToggleStatus,
   onDelete,
   isDisabled = false,
-  isReconnecting = false,
+  isConnecting = false,
   isDeleting = false,
 }: EbayAccountCardProps) {
   const isActive = account.status === 'active';
   const isExpired = new Date(account.expiresAt) < new Date();
   const environment = process.env.EBAY_SANDBOX === 'true' ? 'sandbox' : 'production';
+
+  // Determine if this account has ever been connected to eBay
+  const hasBeenConnected = account.ebayUserId && account.lastUsedAt;
+  const isFirstTimeConnection = !hasBeenConnected;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -186,19 +190,19 @@ export default function EbayAccountCard({
           <VStack gap={3}>
             <Button
               w="full"
-              colorPalette="blue"
+              colorPalette={isFirstTimeConnection ? "orange" : "blue"}
               variant="subtle"
               size="sm"
               borderRadius="10px"
               disabled={isDisabled}
-              loading={isReconnecting}
-              loadingText="Reconnecting..."
+              loading={isConnecting}
+              loadingText={isFirstTimeConnection ? "Connecting..." : "Reconnecting..."}
               onClick={(e) => {
                 e.stopPropagation();
-                onReconnect?.(account.id);
+                onConnect?.(account.id);
               }}
             >
-              Reconnect Account
+              {isFirstTimeConnection ? "Connect Account" : "Reconnect Account"}
             </Button>
 
             <HStack justify="space-between" w="full">

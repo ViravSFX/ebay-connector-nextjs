@@ -28,7 +28,7 @@ export default function Sidebar() {
                 <Navigation />
             </Box>
             {user && (
-                <Avatar.Root size="sm" colorPalette="blue">
+                <Avatar.Root size="sm" colorPalette="orange">
                     <Avatar.Fallback name={user.name || user.email} />
                 </Avatar.Root>
             )}

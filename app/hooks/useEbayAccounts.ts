@@ -19,22 +19,22 @@ interface UseEbayAccountsReturn {
   accounts: EbayAccount[];
   loading: boolean;
   error: string | null;
-  isReconnecting: Record<string, boolean>;
+  isConnecting: Record<string, boolean>;
   isDeleting: Record<string, boolean>;
   isTogglingStatus: Record<string, boolean>;
   fetchAccounts: () => Promise<void>;
   deleteAccount: (accountId: string) => Promise<void>;
   toggleAccountStatus: (accountId: string, isActive: boolean) => Promise<void>;
-  reconnectAccount: (accountId: string) => Promise<void>;
+  connectAccount: (accountId: string) => Promise<void>;
   updateAccount: (accountId: string, data: Partial<EbayAccount>) => Promise<void>;
-  createAccount: (data: { friendlyName: string; description?: string; tags: string[]; ebayUsername?: string; }) => Promise<void>;
+  createAccount: (data: { friendlyName: string; description?: string; tags: string[]; ebayUsername?: string; selectedScopes: string[]; }) => Promise<void>;
 }
 
 export function useEbayAccounts(): UseEbayAccountsReturn {
   const [accounts, setAccounts] = useState<EbayAccount[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isReconnecting, setIsReconnecting] = useState<Record<string, boolean>>({});
+  const [isConnecting, setIsConnecting] = useState<Record<string, boolean>>({});
   const [isDeleting, setIsDeleting] = useState<Record<string, boolean>>({});
   const [isTogglingStatus, setIsTogglingStatus] = useState<Record<string, boolean>>({});
 
@@ -133,8 +133,8 @@ export function useEbayAccounts(): UseEbayAccountsReturn {
     }
   }, []);
 
-  const reconnectAccount = useCallback(async (accountId: string) => {
-    setIsReconnecting(prev => ({ ...prev, [accountId]: true }));
+  const connectAccount = useCallback(async (accountId: string) => {
+    setIsConnecting(prev => ({ ...prev, [accountId]: true }));
     try {
       console.log('Redirecting to OAuth for account:', accountId);
       // Redirect to OAuth on the same page
@@ -143,7 +143,7 @@ export function useEbayAccounts(): UseEbayAccountsReturn {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       console.error('Error initiating eBay OAuth:', err);
-      setIsReconnecting(prev => ({ ...prev, [accountId]: false }));
+      setIsConnecting(prev => ({ ...prev, [accountId]: false }));
     }
   }, []);
 
@@ -182,7 +182,7 @@ export function useEbayAccounts(): UseEbayAccountsReturn {
     }
   }, []);
 
-  const createAccount = useCallback(async (data: { friendlyName: string; description?: string; tags: string[]; ebayUsername?: string; }) => {
+  const createAccount = useCallback(async (data: { friendlyName: string; description?: string; tags: string[]; ebayUsername?: string; selectedScopes: string[]; }) => {
     try {
       setLoading(true);
       const response = await fetch('/api/ebay-accounts', {
@@ -223,14 +223,14 @@ export function useEbayAccounts(): UseEbayAccountsReturn {
     accounts,
     loading,
     error,
-    isReconnecting,
+    isConnecting,
     isDeleting,
     isTogglingStatus,
     fetchAccounts,
     createAccount,
     deleteAccount,
     toggleAccountStatus,
-    reconnectAccount,
+    connectAccount,
     updateAccount,
   };
 }

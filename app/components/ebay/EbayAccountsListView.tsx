@@ -22,10 +22,10 @@ interface EbayAccountsListViewProps {
   accounts: EbayAccount[];
   loading?: boolean;
   onView?: (account: EbayAccount) => void;
-  onReconnect?: (accountId: string) => void;
+  onConnect?: (accountId: string) => void;
   onToggleStatus?: (accountId: string, isActive: boolean) => void;
   onDelete?: (accountId: string) => void;
-  isReconnecting?: Record<string, boolean>;
+  isConnecting?: Record<string, boolean>;
   isDeleting?: Record<string, boolean>;
 }
 
@@ -33,10 +33,10 @@ export default function EbayAccountsListView({
   accounts,
   loading = false,
   onView,
-  onReconnect,
+  onConnect,
   onToggleStatus,
   onDelete,
-  isReconnecting = {},
+  isConnecting = {},
   isDeleting = {},
 }: EbayAccountsListViewProps) {
   const [selectedAccount, setSelectedAccount] = useState<EbayAccount | null>(null);
@@ -181,10 +181,10 @@ export default function EbayAccountsListView({
               <EbayAccountCard
                 account={account}
                 onView={handleView}
-                onReconnect={onReconnect}
+                onConnect={onConnect}
                 onToggleStatus={onToggleStatus}
                 onDelete={onDelete}
-                isReconnecting={isReconnecting[account.id]}
+                isConnecting={isConnecting[account.id]}
                 isDeleting={isDeleting[account.id]}
               />
             </GridItem>

@@ -16,9 +16,14 @@ import {
   Button,
   Separator,
   Box,
+  Grid,
+  GridItem,
 } from '@chakra-ui/react';
 import { FiGlobe, FiUser, FiClock, FiTag, FiShield, FiCalendar } from 'react-icons/fi';
 import { EbayAccount } from '@/app/hooks/useEbayAccounts';
+import { EBAY_OAUTH_SCOPES, SCOPE_CATEGORIES, getScopesByCategory } from '@/app/lib/constants/ebayScopes';
+import EbayScopeCategory from './scope/EbayScopeCategory';
+import { useState } from 'react';
 
 interface EbayAccountViewModalProps {
   isOpen: boolean;
@@ -33,9 +38,35 @@ export default function EbayAccountViewModal({
 }: EbayAccountViewModalProps) {
   if (!account) return null;
 
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+
+  const handleCategoryToggle = (categoryKey: string) => {
+    setExpandedCategories(prev =>
+      prev.includes(categoryKey)
+        ? prev.filter(cat => cat !== categoryKey)
+        : [...prev, categoryKey]
+    );
+  };
+
   const isActive = account.status === 'active';
   const isExpired = new Date(account.expiresAt) < new Date();
   const environment = process.env.EBAY_SANDBOX === 'true' ? 'sandbox' : 'production';
+
+  // Safely parse scopes and tags
+  const scopeIds = Array.isArray(account.scopes)
+    ? account.scopes
+    : typeof account.scopes === 'string'
+      ? (account.scopes ? JSON.parse(account.scopes) : [])
+      : [];
+
+  const tags = Array.isArray(account.tags)
+    ? account.tags
+    : typeof account.tags === 'string'
+      ? (account.tags ? JSON.parse(account.tags) : [])
+      : [];
+
+  // Get scope objects from IDs
+  const accountScopes = EBAY_OAUTH_SCOPES.filter(scope => scopeIds.includes(scope.id));
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
@@ -47,15 +78,11 @@ export default function EbayAccountViewModal({
     });
   };
 
-  const formatScope = (scope: string) => {
-    return scope.replace('https://api.ebay.com/oauth/api_scope', 'Basic API Access');
-  };
-
   return (
-    <Dialog.Root open={isOpen} onOpenChange={onClose}>
+    <Dialog.Root open={isOpen} onOpenChange={onClose} scrollBehavior="inside">
       <Dialog.Backdrop />
       <Dialog.Positioner>
-        <Dialog.Content maxW="2xl">
+        <Dialog.Content maxW="11/12">
           <Dialog.Header>
             <Dialog.Title>
               eBay Account Details
@@ -212,32 +239,47 @@ export default function EbayAccountViewModal({
 
               {/* Scopes */}
               <VStack align="stretch" gap={4}>
-                <Heading size="md" color="gray.700">
-                  Permissions & Scopes
-                </Heading>
+                <HStack justify="space-between" align="center">
+                  <Heading size="md" color="gray.700">
+                    Permissions & Scopes
+                  </Heading>
+                  <Badge
+                    colorPalette={accountScopes.length > 0 ? 'blue' : 'gray'}
+                    variant="subtle"
+                    fontSize="sm"
+                  >
+                    {accountScopes.length} permissions granted
+                  </Badge>
+                </HStack>
 
-                <Box>
-                  {account.scopes.length > 0 ? (
-                    <VStack align="stretch" gap={2}>
-                      {account.scopes.map((scope, index) => (
-                        <HStack key={index} p={3} bg="gray.50" borderRadius="md">
-                          <Icon as={FiShield} color="blue.600" />
-                          <Text fontSize="sm" color="gray.800">
-                            {formatScope(scope)}
-                          </Text>
-                        </HStack>
-                      ))}
-                    </VStack>
-                  ) : (
-                    <Text fontSize="sm" color="gray.500" fontStyle="italic">
-                      No specific scopes granted - Basic access only
-                    </Text>
-                  )}
-                </Box>
+                {accountScopes.length > 0 ? (
+                  <VStack align="stretch" gap={4}>
+                    {Object.keys(SCOPE_CATEGORIES).map((categoryKey) => (
+                      <EbayScopeCategory
+                        key={categoryKey}
+                        categoryKey={categoryKey}
+                        isExpanded={expandedCategories.includes(categoryKey)}
+                        onToggle={() => handleCategoryToggle(categoryKey)}
+                        selectedScopes={scopeIds}
+                        onScopeToggle={() => {}} // Read-only mode
+                        disabled={true}
+                      />
+                    ))}
+                  </VStack>
+                ) : (
+                  <Box p={4} bg="gray.50" borderRadius="md" border="1px solid" borderColor="gray.200">
+                    <HStack>
+                      <Icon as={FiShield} color="gray.500" />
+                      <Text fontSize="sm" color="gray.600" fontStyle="italic">
+                        No specific scopes granted - Basic access only
+                      </Text>
+                    </HStack>
+                  </Box>
+                )}
               </VStack>
 
               {/* Tags */}
-              {account.tags && account.tags.length > 0 && (
+              {tags && tags.length > 0 && (
                 <>
                   <Separator />
                   <VStack align="stretch" gap={4}>
@@ -245,8 +287,8 @@ export default function EbayAccountViewModal({
                       Tags
                     </Heading>
                     <HStack gap={2} flexWrap="wrap">
-                      {account.tags.map((tag, index) => (
-                        <Badge key={index} colorPalette="blue" variant="outline">
+                      {tags.map((tag: string, index: number) => (
+                        <Badge key={index} colorPalette="orange" variant="outline">
                           {tag}
                         </Badge>
                       ))}

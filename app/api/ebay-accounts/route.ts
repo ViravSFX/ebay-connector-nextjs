@@ -89,11 +89,15 @@ export async function POST(request: NextRequest) {
       expiresAt,
       tokenType = 'Bearer',
       scopes = [],
+      selectedScopes = [],
       status = 'inactive', // Default to inactive until OAuth is completed
       friendlyName,
       tags = [],
       description,
     } = await request.json();
+
+    // Use selectedScopes if provided, otherwise fall back to scopes
+    const finalScopes = selectedScopes.length > 0 ? selectedScopes : scopes;
 
     // For manual account creation (without OAuth tokens initially)
     if (!ebayUserId && !accessToken) {
@@ -107,7 +111,7 @@ export async function POST(request: NextRequest) {
           refreshToken: 'pending_oauth', // Placeholder token
           expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
           tokenType,
-          scopes: JSON.stringify(scopes),
+          scopes: JSON.stringify(finalScopes),
           status: 'inactive', // Inactive until OAuth is completed
           friendlyName: friendlyName || 'New eBay Account',
           tags: JSON.stringify(tags),
@@ -150,7 +154,7 @@ export async function POST(request: NextRequest) {
         refreshToken,
         expiresAt: new Date(expiresAt),
         tokenType,
-        scopes,
+        scopes: JSON.stringify(finalScopes),
         status,
         friendlyName,
         tags,
@@ -164,7 +168,7 @@ export async function POST(request: NextRequest) {
         refreshToken,
         expiresAt: new Date(expiresAt),
         tokenType,
-        scopes,
+        scopes: JSON.stringify(finalScopes),
         status,
         friendlyName,
         tags,

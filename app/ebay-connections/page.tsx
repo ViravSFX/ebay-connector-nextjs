@@ -17,13 +17,13 @@ export default function EbayConnectionsPage() {
         accounts,
         loading,
         error,
-        isReconnecting,
+        isConnecting,
         isDeleting,
         isTogglingStatus,
         fetchAccounts,
         deleteAccount,
         toggleAccountStatus,
-        reconnectAccount,
+        connectAccount,
         createAccount,
     } = useEbayAccounts();
 
@@ -69,7 +69,7 @@ export default function EbayConnectionsPage() {
         fetchAccounts();
     };
 
-    const handleConnect = () => {
+    const handleOpenAddModal = () => {
         setIsAddModalOpen(true);
     };
 
@@ -85,8 +85,8 @@ export default function EbayConnectionsPage() {
         }
     };
 
-    const handleReconnect = (accountId: string) => {
-        reconnectAccount(accountId);
+    const handleConnect = (accountId: string) => {
+        connectAccount(accountId);
     };
 
     const handleToggleStatus = (accountId: string, isActive: boolean) => {
@@ -95,10 +95,6 @@ export default function EbayConnectionsPage() {
 
     const handleDelete = (accountId: string) => {
         deleteAccount(accountId);
-    };
-
-    const handleView = (account: EbayAccount) => {
-        console.log("Viewing account:", account);
     };
 
     return (
@@ -114,7 +110,7 @@ export default function EbayConnectionsPage() {
                     primaryAction={{
                         label: "Connect eBay Account",
                         icon: <MdAdd />,
-                        onClick: handleConnect,
+                        onClick: handleOpenAddModal,
                         colorPalette: "orange",
                     }}
                 />
@@ -143,11 +139,10 @@ export default function EbayConnectionsPage() {
                 <EbayAccountsListView
                     accounts={accounts}
                     loading={loading}
-                    onView={handleView}
-                    onReconnect={handleReconnect}
+                    onConnect={handleConnect}
                     onToggleStatus={handleToggleStatus}
                     onDelete={handleDelete}
-                    isReconnecting={isReconnecting}
+                    isConnecting={isConnecting}
                     isDeleting={isDeleting}
                 />
 
