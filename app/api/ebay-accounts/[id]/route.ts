@@ -40,6 +40,7 @@ export async function GET(
         expiresAt: true,
         tokenType: true,
         scopes: true,
+        userSelectedScopes: true,
         status: true,
         friendlyName: true,
         tags: true,
@@ -60,6 +61,7 @@ export async function GET(
     const parsedAccount = {
       ...ebayAccount,
       scopes: typeof ebayAccount.scopes === 'string' ? JSON.parse(ebayAccount.scopes) : ebayAccount.scopes,
+      userSelectedScopes: typeof ebayAccount.userSelectedScopes === 'string' ? JSON.parse(ebayAccount.userSelectedScopes) : ebayAccount.userSelectedScopes,
       tags: typeof ebayAccount.tags === 'string' ? JSON.parse(ebayAccount.tags) : ebayAccount.tags,
     };
 
@@ -105,10 +107,10 @@ export async function PUT(
     // Convert arrays to JSON strings for database storage
     const processedData = {
       ...updateData,
-      scopes: Array.isArray(updateData.selectedScopes) ? JSON.stringify(updateData.selectedScopes) : updateData.scopes,
+      userSelectedScopes: Array.isArray(updateData.selectedScopes) ? JSON.stringify(updateData.selectedScopes) : updateData.userSelectedScopes,
       tags: Array.isArray(updateData.tags) ? JSON.stringify(updateData.tags) : updateData.tags,
       updatedAt: new Date(),
-    };
+    } as any;
 
     // Remove selectedScopes as it's not a database field
     delete processedData.selectedScopes;
@@ -128,6 +130,7 @@ export async function PUT(
         expiresAt: true,
         tokenType: true,
         scopes: true,
+        userSelectedScopes: true,
         status: true,
         friendlyName: true,
         tags: true,
@@ -141,6 +144,7 @@ export async function PUT(
     const parsedAccount = {
       ...ebayAccount,
       scopes: typeof ebayAccount.scopes === 'string' ? JSON.parse(ebayAccount.scopes) : ebayAccount.scopes,
+      userSelectedScopes: typeof ebayAccount.userSelectedScopes === 'string' ? JSON.parse(ebayAccount.userSelectedScopes) : ebayAccount.userSelectedScopes,
       tags: typeof ebayAccount.tags === 'string' ? JSON.parse(ebayAccount.tags) : ebayAccount.tags,
     };
 

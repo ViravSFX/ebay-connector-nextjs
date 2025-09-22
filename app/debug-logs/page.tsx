@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from 'next/navigation';
 import {
     Box,
     VStack,
@@ -33,6 +34,7 @@ interface DebugLog {
 }
 
 export default function DebugLogsPage() {
+    const router = useRouter();
     const [logs, setLogs] = useState<DebugLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -86,6 +88,14 @@ export default function DebugLogsPage() {
             console.error("Error clearing logs:", err);
         }
     };
+
+    useEffect(() => {
+        // Check if user is logged in
+        const user = localStorage.getItem('user');
+        if (!user) {
+            router.push('/login');
+        }
+    }, [router]);
 
     // Real-time SSE connection
     useEffect(() => {

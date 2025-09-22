@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   VStack,
@@ -42,6 +43,8 @@ interface ApiToken {
 }
 
 export default function ApiTokensPage() {
+  const router = useRouter();
+
   // Table ref for refetching data
   const tableRef = useRef<TableRef>(null);
 
@@ -50,6 +53,14 @@ export default function ApiTokensPage() {
   const [showFullTokens, setShowFullTokens] = useState<Record<string, boolean>>({});
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const user = localStorage.getItem('user');
+    if (!user) {
+      router.push('/login');
+    }
+  }, [router]);
 
   // Utility functions
   const copyToClipboard = async (text: string) => {

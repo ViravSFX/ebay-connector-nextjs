@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
         expiresAt: true,
         tokenType: true,
         scopes: true,
+        userSelectedScopes: true,
         status: true,
         friendlyName: true,
         tags: true,
@@ -51,6 +52,7 @@ export async function GET(request: NextRequest) {
     const parsedAccounts = ebayAccounts.map(account => ({
       ...account,
       scopes: typeof account.scopes === 'string' ? JSON.parse(account.scopes) : account.scopes,
+      userSelectedScopes: typeof account.userSelectedScopes === 'string' ? JSON.parse(account.userSelectedScopes) : account.userSelectedScopes,
       tags: typeof account.tags === 'string' ? JSON.parse(account.tags) : account.tags,
     }));
 
@@ -118,6 +120,7 @@ export async function POST(request: NextRequest) {
           expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
           tokenType,
           scopes: JSON.stringify(finalScopes),
+          userSelectedScopes: JSON.stringify(selectedScopes) as any,
           status: 'inactive', // Inactive until OAuth is completed
           friendlyName: friendlyName || 'New eBay Account',
           tags: JSON.stringify(tags),
@@ -161,6 +164,7 @@ export async function POST(request: NextRequest) {
         expiresAt: new Date(expiresAt),
         tokenType,
         scopes: JSON.stringify(finalScopes),
+        userSelectedScopes: JSON.stringify(selectedScopes) as any,
         status,
         friendlyName,
         tags,
@@ -175,6 +179,7 @@ export async function POST(request: NextRequest) {
         expiresAt: new Date(expiresAt),
         tokenType,
         scopes: JSON.stringify(finalScopes),
+        userSelectedScopes: JSON.stringify(selectedScopes) as any,
         status,
         friendlyName,
         tags,
@@ -186,6 +191,7 @@ export async function POST(request: NextRequest) {
         expiresAt: true,
         tokenType: true,
         scopes: true,
+        userSelectedScopes: true,
         status: true,
         friendlyName: true,
         tags: true,

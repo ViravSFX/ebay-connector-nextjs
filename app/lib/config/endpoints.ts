@@ -12,62 +12,60 @@ export interface EndpointConfig {
 export const AVAILABLE_ENDPOINTS: EndpointConfig[] = [
   // Core eBay API Endpoints
   {
-    id: 'inventory',
+    id: '/ebay/{accountId}/inventory',
     name: 'Inventory Management',
-    description: 'Manage item inventory, stock levels, and SKUs',
+    description: 'View and manage inventory items, stock levels, and offers',
     category: 'core',
     requiredPlan: 'FREE'
   },
   {
-    id: 'orders',
+    id: '/ebay/{accountId}/orders',
     name: 'Order Management',
-    description: 'Access order data, fulfillment, and tracking',
+    description: 'Access order data, fulfillment, and tracking information',
     category: 'core',
     requiredPlan: 'FREE'
   },
   {
-    id: 'products',
-    name: 'Product Catalog',
-    description: 'Product catalog management and item details',
-    category: 'core',
-    requiredPlan: 'FREE'
-  },
-  {
-    id: 'listings',
+    id: '/ebay/{accountId}/listings',
     name: 'Listing Management',
-    description: 'Create, update, and manage eBay listings',
+    description: 'Create, update, and manage eBay listings and items',
     category: 'core',
     requiredPlan: 'FREE'
   },
   {
-    id: 'categories',
-    name: 'Category Browse',
-    description: 'Browse eBay categories and item specifics',
+    id: '/ebay/{accountId}/account',
+    name: 'Account Settings',
+    description: 'View and manage account settings and seller policies',
     category: 'core',
     requiredPlan: 'FREE'
   },
-
-  // Advanced Features
   {
-    id: 'seller-profiles',
-    name: 'Seller Profiles',
-    description: 'Seller account information and settings',
+    id: '/ebay/{accountId}/finances',
+    name: 'Financial Information',
+    description: 'View payment and financial data',
     category: 'advanced',
-    requiredPlan: 'FREE'
+    requiredPlan: 'BASIC'
   },
   {
-    id: 'payments',
-    name: 'Payment Processing',
-    description: 'Payment transactions and financial data',
+    id: '/ebay/{accountId}/marketing',
+    name: 'Marketing Activities',
+    description: 'View and manage marketing campaigns and promotions',
     category: 'advanced',
-    requiredPlan: 'FREE'
+    requiredPlan: 'BASIC'
   },
   {
-    id: 'shipping',
-    name: 'Shipping Management',
-    description: 'Shipping labels, tracking, and logistics',
-    category: 'advanced',
-    requiredPlan: 'FREE'
+    id: '/ebay/{accountId}/analytics',
+    name: 'Analytics & Reports',
+    description: 'View selling performance data and marketplace insights',
+    category: 'premium',
+    requiredPlan: 'PRO'
+  },
+  {
+    id: '/ebay/{accountId}/stores',
+    name: 'eBay Stores',
+    description: 'View and manage eBay store settings and configurations',
+    category: 'premium',
+    requiredPlan: 'PRO'
   }
 ];
 
@@ -95,7 +93,11 @@ export const getEndpointIds = (): string[] => {
 };
 
 // Default endpoints for new tokens
-export const DEFAULT_ENDPOINTS = ['inventory', 'orders', 'categories'];
+export const DEFAULT_ENDPOINTS = [
+  '/ebay/{accountId}/inventory',
+  '/ebay/{accountId}/orders',
+  '/ebay/{accountId}/account'
+];
 
 // Rate limiting tiers based on endpoint categories
 export const RATE_LIMITS = {

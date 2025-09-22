@@ -8,16 +8,9 @@ import {
   Heading,
   Icon,
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogBody,
-  DialogFooter,
-  DialogTitle,
   Button,
   Separator,
   Box,
-  Grid,
-  GridItem,
 } from '@chakra-ui/react';
 import { FiGlobe, FiUser, FiClock, FiTag, FiShield, FiCalendar } from 'react-icons/fi';
 import { EbayAccount } from '@/app/hooks/useEbayAccounts';
@@ -53,10 +46,10 @@ export default function EbayAccountViewModal({
   const environment = process.env.NEXT_PUBLIC_EBAY_SANDBOX === 'true' ? 'sandbox' : 'production';
 
   // Safely parse scopes and tags
-  const scopeIds = Array.isArray(account.scopes)
-    ? account.scopes
-    : typeof account.scopes === 'string'
-      ? (account.scopes ? JSON.parse(account.scopes) : [])
+  const scopeIds = Array.isArray(account.userSelectedScopes)
+    ? account.userSelectedScopes
+    : typeof account.userSelectedScopes === 'string'
+      ? (account.userSelectedScopes ? JSON.parse(account.userSelectedScopes) : [])
       : [];
 
   const tags = Array.isArray(account.tags)

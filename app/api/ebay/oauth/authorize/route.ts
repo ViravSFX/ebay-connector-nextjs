@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ebayOAuthService } from '@/app/lib/services/ebayOAuth';
 import prisma from '@/app/lib/services/database';
 import { EBAY_OAUTH_SCOPES } from '@/app/lib/constants/ebayScopes';
+import { EBAY_SCOPES, getEbayConfig, getEbayUrls } from '@/app/lib/config/ebay';
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,10 +23,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const config = getEbayConfig();
+    const urls = getEbayUrls(config.isProduction);
+
     // Fetch the account to get its selected scopes
     const account = await prisma.ebayUserToken.findUnique({
       where: { id: accountId },
-      select: { scopes: true }
+      select: { userSelectedScopes: true }
     });
 
     if (!account) {
@@ -36,10 +40,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Parse the selected scopes from the database
-    const selectedScopeIds = Array.isArray(account.scopes)
-      ? account.scopes
-      : typeof account.scopes === 'string'
-        ? (account.scopes ? JSON.parse(account.scopes) : [])
+    const selectedScopeIds = Array.isArray(account.userSelectedScopes)
+      ? account.userSelectedScopes
+      : typeof account.userSelectedScopes === 'string'
+        ? (account.userSelectedScopes ? JSON.parse(account.userSelectedScopes) : [])
         : [];
 
     // Convert scope IDs to eBay scope URLs
@@ -51,7 +55,7 @@ export async function GET(request: NextRequest) {
       .filter(Boolean); // Remove any null values
 
     // Always include basic API scope if not already present
-    const basicScope = 'https://api.ebay.com/oauth/api_scope';
+    const basicScope = EBAY_SCOPES.READ_BASIC;
     if (!accountScopeUrls.includes(basicScope)) {
       accountScopeUrls.unshift(basicScope);
     }
@@ -59,15 +63,13 @@ export async function GET(request: NextRequest) {
     // Use account-specific scopes or fall back to basic scopes
     const scopes = accountScopeUrls.length > 0
       ? accountScopeUrls.join(' ')
-      : 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/commerce.identity.readonly';
+      : `${EBAY_SCOPES.READ_BASIC} ${EBAY_SCOPES.COMMERCE}`;
 
     // Generate a random state parameter for security
     const state = `${accountId}_${Math.random().toString(36).substring(2, 15)}`;
 
     // Temporarily build authorization URL manually to bypass the library issue
-    const baseUrl = process.env.EBAY_SANDBOX === 'true'
-      ? 'https://auth.sandbox.ebay.com/oauth2/authorize'
-      : 'https://auth.ebay.com/oauth2/authorize';
+    const baseUrl = urls.auth;
 
     const authParams = new URLSearchParams({
       client_id: process.env.EBAY_CLIENT_ID,

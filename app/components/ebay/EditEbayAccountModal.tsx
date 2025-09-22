@@ -16,6 +16,7 @@ import {
 import { useState, useEffect } from 'react';
 import EbayScopeSelector from './EbayScopeSelector';
 import { EbayAccount } from '@/app/hooks/useEbayAccounts';
+import { DEFAULT_SCOPES } from '@/app/lib/constants/ebayScopes';
 
 interface EditEbayAccountFormData {
   friendlyName: string;
@@ -65,23 +66,32 @@ export default function EditEbayAccountModal({
       };
 
       const parseScopes = (scopes: any): string[] => {
-        if (Array.isArray(scopes)) return scopes;
-        if (typeof scopes === 'string') {
+        let parsedScopes: string[] = [];
+
+        if (Array.isArray(scopes)) {
+          parsedScopes = scopes;
+        } else if (typeof scopes === 'string') {
           try {
             const parsed = JSON.parse(scopes);
-            return Array.isArray(parsed) ? parsed : [];
+            parsedScopes = Array.isArray(parsed) ? parsed : [];
           } catch {
-            return [];
+            parsedScopes = [];
           }
         }
-        return [];
+
+        // Add missing required scopes using DEFAULT_SCOPES
+        const missingRequiredScopes = DEFAULT_SCOPES.filter(
+          scopeId => !parsedScopes.includes(scopeId)
+        );
+
+        return [...parsedScopes, ...missingRequiredScopes];
       };
 
       setFormData({
         friendlyName: account.friendlyName || '',
         tags: parseTags(account.tags),
         ebayUsername: account.ebayUsername || '',
-        selectedScopes: parseScopes(account.scopes),
+        selectedScopes: parseScopes(account.userSelectedScopes),
       });
     }
   }, [account, isOpen]);

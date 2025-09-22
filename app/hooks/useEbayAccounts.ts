@@ -7,6 +7,7 @@ export interface EbayAccount {
   expiresAt: string;
   tokenType: string;
   scopes: string[];
+  userSelectedScopes: string[];
   status: string;
   friendlyName?: string;
   tags?: string[];

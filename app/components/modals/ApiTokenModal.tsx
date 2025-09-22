@@ -15,7 +15,7 @@ import {
     Checkbox,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
-import { AVAILABLE_ENDPOINTS, DEFAULT_ENDPOINTS, getEndpointById } from "@/app/lib/config/endpoints";
+import { AVAILABLE_ENDPOINTS, DEFAULT_ENDPOINTS } from "@/app/lib/config/endpoints";
 
 interface CreateApiTokenData {
     name: string;
@@ -23,6 +23,7 @@ interface CreateApiTokenData {
         endpoints?: string[];
         rateLimit?: number;
     };
+    scopes?: string[];
     expiresAt?: string;
 }
 
@@ -146,7 +147,10 @@ export default function ApiTokenModal({
 
         const submitData: CreateApiTokenData = {
             name: formData.name.trim(),
-            permissions: formData.permissions,
+            permissions: {
+                endpoints: formData.permissions?.endpoints || [],
+                rateLimit: formData.permissions?.rateLimit || 1000,
+            },
         };
 
         if (formData.expiresAt) {
@@ -202,7 +206,7 @@ export default function ApiTokenModal({
         <Dialog.Root open={isOpen} onOpenChange={() => handleClose()}>
             <Dialog.Backdrop />
             <Dialog.Positioner>
-                <Dialog.Content maxW="2xl" p={6}>
+                <Dialog.Content maxW="8/12" p={6}>
                     <Dialog.Header>
                         <Dialog.Title fontSize="xl" fontWeight="bold">
                             {isEditing ? "Edit API Token" : "Create New API Token"}
@@ -294,7 +298,7 @@ export default function ApiTokenModal({
                                 {/* Permissions Section */}
                                 <VStack align="stretch" gap={4}>
                                     <Heading size="md" color="gray.700">
-                                        Endpoint Permissions
+                                        API Permissions
                                     </Heading>
 
                                     <Box>
@@ -318,6 +322,9 @@ export default function ApiTokenModal({
                                                                 <Text fontSize="xs" color="gray.500">
                                                                     {endpoint.description}
                                                                 </Text>
+                                                                <Text fontSize="xs" color="orange.500" fontWeight="medium">
+                                                                    {endpoint.id}
+                                                                </Text>
                                                             </VStack>
                                                         </Checkbox.Label>
                                                     </Checkbox.Root>
@@ -325,7 +332,7 @@ export default function ApiTokenModal({
                                             ))}
                                         </Grid>
                                         <Text fontSize="xs" color="gray.500" mt={2}>
-                                            Tokens with no endpoint restrictions can access all available endpoints
+                                            Token will only be able to access the selected API endpoints
                                         </Text>
                                     </Box>
                                 </VStack>

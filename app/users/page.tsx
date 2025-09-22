@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   VStack,
@@ -47,6 +48,7 @@ interface UserFormData {
 
 
 export default function UsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,9 +63,16 @@ export default function UsersPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
+    // Check if user is logged in
+    const user = localStorage.getItem('user');
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
     fetchUsers();
     loadCurrentUser();
-  }, []);
+  }, [router]);
 
   const loadCurrentUser = () => {
     const storedUser = localStorage.getItem('user');

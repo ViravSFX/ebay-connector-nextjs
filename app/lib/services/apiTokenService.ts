@@ -65,7 +65,21 @@ export class ApiTokenService {
         name: data.name,
         token,
         permissions: defaultPermissions,
+        scopes: data.permissions?.endpoints || DEFAULT_ENDPOINTS, // Use selected endpoints
         expiresAt: data.expiresAt
+      },
+      select: {
+        id: true,
+        name: true,
+        token: true,
+        permissions: true,
+        scopes: true,
+        isActive: true,
+        isDeleted: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        createdAt: true,
+        updatedAt: true
       }
     } as any);
 
@@ -95,7 +109,19 @@ export class ApiTokenService {
 
     const tokens = await prisma.apiToken.findMany({
       where: whereClause,
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        token: true,
+        permissions: true,
+        isActive: true,
+        isDeleted: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        createdAt: true,
+        updatedAt: true
+      }
     });
 
     return tokens as ApiTokenResponse[];
@@ -111,7 +137,17 @@ export class ApiTokenService {
         isActive: true,
         isDeleted: false // Exclude deleted tokens
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        token: true,
+        permissions: true,
+        isActive: true,
+        isDeleted: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        createdAt: true,
+        updatedAt: true,
         user: {
           select: {
             id: true,
@@ -170,6 +206,18 @@ export class ApiTokenService {
       data: {
         isActive: true,
         updatedAt: new Date()
+      },
+      select: {
+        id: true,
+        name: true,
+        token: true,
+        permissions: true,
+        isActive: true,
+        isDeleted: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
 
@@ -261,6 +309,18 @@ export class ApiTokenService {
         id: tokenId,
         userId,
         isDeleted: false // Exclude deleted tokens
+      },
+      select: {
+        id: true,
+        name: true,
+        token: true,
+        permissions: true,
+        isActive: true,
+        isDeleted: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
 

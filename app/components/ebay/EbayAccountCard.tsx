@@ -11,11 +11,10 @@ import {
   Icon,
   Switch,
   Box,
-  Grid,
-  GridItem,
+  IconButton,
 } from '@chakra-ui/react';
-import { MdDelete, MdEdit } from 'react-icons/md';
-import { FiGlobe, FiUser, FiClock, FiTag } from 'react-icons/fi';
+import { MdDelete, MdEdit, MdContentCopy } from 'react-icons/md';
+import { FiUser, FiTag } from 'react-icons/fi';
 import { EbayAccount } from '@/app/hooks/useEbayAccounts';
 
 interface EbayAccountCardProps {
@@ -60,6 +59,10 @@ export default function EbayAccountCard({
   };
 
   const displayName = account.friendlyName || account.ebayUsername || account.ebayUserId;
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
 
   return (
     <Card.Root
@@ -169,47 +172,32 @@ export default function EbayAccountCard({
               </HStack>
             </Box>
 
-            {/* Connection Details */}
+            {/* Account Details */}
             <VStack align="stretch" gap={3}>
-              <Grid templateColumns="1fr 1fr" gap={4}>
-                <GridItem>
-                  <HStack>
-                    <Icon as={FiGlobe} color="blue.500" size="sm" />
-                    <VStack align="start" gap={0} minW={0} flex={1}>
-                      <Text fontSize="xs" color="gray.500" fontWeight="500">
-                        User ID
-                      </Text>
-                      <Text fontSize="sm" color="gray.700" fontFamily="mono" fontWeight="500" lineClamp={1}>
-                        {account.ebayUserId}
-                      </Text>
-                    </VStack>
-                  </HStack>
-                </GridItem>
-                <GridItem>
-                  <HStack>
-                    <Icon as={FiClock} color="purple.500" size="sm" />
-                    <VStack align="start" gap={0} minW={0} flex={1}>
-                      <Text fontSize="xs" color="gray.500" fontWeight="500">
-                        Connected
-                      </Text>
-                      <Text fontSize="sm" color="gray.700" fontWeight="500" lineClamp={1}>
-                        {formatDate(account.createdAt)}
-                      </Text>
-                    </VStack>
-                  </HStack>
-                </GridItem>
-              </Grid>
-
-              {/* Connection ID Row */}
+              {/* Account ID Row */}
               <HStack>
                 <Icon as={FiTag} color="green.500" size="sm" />
                 <VStack align="start" gap={0} minW={0} flex={1}>
                   <Text fontSize="xs" color="gray.500" fontWeight="500">
-                    Connection ID
+                    Account ID
                   </Text>
-                  <Text fontSize="sm" color="gray.700" fontFamily="mono" fontWeight="500" lineClamp={1}>
-                    {account.id}
-                  </Text>
+                  <HStack justify="space-between" w="full">
+                    <Text fontSize="sm" color="gray.700" fontFamily="mono" fontWeight="500" lineClamp={1} flex="1">
+                      {account.id}
+                    </Text>
+                    <IconButton
+                      aria-label="Copy account ID"
+                      size="xs"
+                      variant="ghost"
+                      colorPalette="gray"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyToClipboard(account.id);
+                      }}
+                    >
+                      <MdContentCopy />
+                    </IconButton>
+                  </HStack>
                 </VStack>
               </HStack>
             </VStack>

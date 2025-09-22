@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from 'next/navigation';
 import { Box, VStack, Alert } from "@chakra-ui/react";
 import { MdAdd } from "react-icons/md";
 import PageHeader from "@/app/components/common/PageHeader";
@@ -10,6 +11,7 @@ import EditEbayAccountModal from "../components/ebay/EditEbayAccountModal";
 import { useEbayAccounts, type EbayAccount } from "../hooks/useEbayAccounts";
 
 export default function EbayConnectionsPage() {
+    const router = useRouter();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedAccount, setSelectedAccount] = useState<EbayAccount | null>(null);
@@ -30,6 +32,14 @@ export default function EbayConnectionsPage() {
         createAccount,
         updateAccount,
     } = useEbayAccounts();
+
+    useEffect(() => {
+        // Check if user is logged in
+        const user = localStorage.getItem('user');
+        if (!user) {
+            router.push('/login');
+        }
+    }, [router]);
 
     // Handle URL parameters for success/error messages
     useEffect(() => {

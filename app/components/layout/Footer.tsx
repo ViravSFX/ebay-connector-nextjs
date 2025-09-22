@@ -21,7 +21,7 @@ export default function Footer() {
             gap={4}
           >
             <Text fontSize="sm" color="gray.600">
-              © 2024 eBay Connector. All rights reserved.
+              © 2025 eBay Connector. All rights reserved.
             </Text>
             <Text fontSize="sm" color="gray.500">
               Developed by - SFX E-commerce
