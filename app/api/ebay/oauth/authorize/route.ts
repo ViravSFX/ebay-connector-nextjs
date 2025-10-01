@@ -47,7 +47,16 @@ export async function GET(request: NextRequest) {
         : [];
 
     // Convert scope IDs to eBay scope URLs
-    const accountScopeUrls = selectedScopeIds
+    // LIMIT to essential scopes only for production stability
+    const essentialScopeIds = [
+      'api_scope',
+      'identity_readonly',
+      'sell_inventory',
+      'sell_account',
+      'sell_fulfillment'
+    ];
+
+    const accountScopeUrls = essentialScopeIds
       .map((scopeId: string) => {
         const scope = EBAY_OAUTH_SCOPES.find(s => s.id === scopeId);
         return scope ? scope.url : null;
