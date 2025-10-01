@@ -41,23 +41,23 @@ model ApiToken {
 }
 
 model EbayUserToken {
-  id             String    @id @default(cuid())
-  accessToken    String
-  refreshToken   String?
-  expiresAt      DateTime
-  tokenType      String    @default("Bearer")
-  userId         String
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  ebayUserId     String
-  ebayUsername   String?
-  lastUsedAt     DateTime?
-  scopes         Json      @default("[]")
-  status         String    @default("active")
-  friendlyName   String?
-  tags           Json      @default("[]")
-  userSelectedScopes Json  @default("[]")
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String    @id @default(cuid())
+  accessToken        String
+  refreshToken       String?
+  expiresAt          DateTime
+  tokenType          String    @default("Bearer")
+  userId             String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  ebayUserId         String
+  ebayUsername       String?
+  lastUsedAt         DateTime?
+  scopes             Json      @default("[]")
+  status             String    @default("active")
+  friendlyName       String?
+  tags               Json      @default("[]")
+  userSelectedScopes Json      @default("[]")
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, ebayUserId])
   @@map("ebay_user_tokens")

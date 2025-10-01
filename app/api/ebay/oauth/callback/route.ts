@@ -121,47 +121,20 @@ export async function GET(request: NextRequest) {
     const existingAccount = await prisma.ebayUserToken.findUnique({
       where: { id: accountId },
       select: { userSelectedScopes: true }
-    });
+    }) as any;
 
     // DEBUG: Log existing account data
     console.log('=== OAUTH CALLBACK DEBUG - EXISTING ACCOUNT ===');
     console.log('Account ID:', accountId);
     console.log('Existing Account userSelectedScopes:', existingAccount?.userSelectedScopes);
 
-    // Parse the selected scopes that were used for authorization
-    const selectedScopeIds = Array.isArray(existingAccount?.userSelectedScopes)
-      ? existingAccount.userSelectedScopes
-      : typeof existingAccount?.userSelectedScopes === 'string'
-        ? (existingAccount.userSelectedScopes ? JSON.parse(existingAccount.userSelectedScopes) : [])
-        : [];
+    // PRESERVE the original userSelectedScopes format during reconnection
+    // Don't convert or modify them - keep them exactly as they were
+    const preservedUserSelectedScopes = existingAccount?.userSelectedScopes || JSON.stringify(['api_scope']);
 
-    // DEBUG: Log parsed scope IDs
-    console.log('=== OAUTH CALLBACK DEBUG - PARSED SCOPES ===');
-    console.log('Selected Scope IDs:', selectedScopeIds);
-
-    // Convert scope IDs to eBay scope URLs for selectedScopes
-    const selectedEbayScopes: string[] = [];
-    if (selectedScopeIds.length > 0) {
-      // Import the constants to convert IDs to URLs
-      const { EBAY_OAUTH_SCOPES } = require('@/app/lib/constants/ebayScopes');
-
-      selectedScopeIds.forEach((scopeId: string) => {
-        const scope = EBAY_OAUTH_SCOPES.find((s: any) => s.id === scopeId);
-        if (scope) {
-          selectedEbayScopes.push(scope.url);
-        }
-      });
-    }
-
-    // Ensure basic API scope is included
-    if (!selectedEbayScopes.includes(EBAY_SCOPES.READ_BASIC)) {
-      selectedEbayScopes.unshift(EBAY_SCOPES.READ_BASIC);
-      console.log('Added basic API scope to selected scopes');
-    }
-
-    // DEBUG: Log final scope arrays
-    console.log('=== OAUTH CALLBACK DEBUG - FINAL SCOPES ===');
-    console.log('Final selectedEbayScopes (userSelectedScopes):', selectedEbayScopes);
+    // DEBUG: Log preserved scopes
+    console.log('=== OAUTH CALLBACK DEBUG - PRESERVED SCOPES ===');
+    console.log('Preserved userSelectedScopes (no conversion):', preservedUserSelectedScopes);
     console.log('eBay granted scopes (from tokenData.scope):', tokenData.scope);
 
     // Update the placeholder account with real OAuth data
@@ -175,7 +148,7 @@ export async function GET(request: NextRequest) {
         expiresAt: expiresAt,
         tokenType: tokenData.token_type || 'Bearer',
         scopes: tokenData.scope ? tokenData.scope.split(' ') : [EBAY_SCOPES.READ_BASIC], // What eBay actually granted
-        userSelectedScopes: JSON.stringify(selectedEbayScopes), // What the user actually selected
+        userSelectedScopes: preservedUserSelectedScopes, // Preserve original user selections
         status: 'active',
         lastUsedAt: new Date(),
       } as any, // Cast to any to handle the userSelectedScopes field

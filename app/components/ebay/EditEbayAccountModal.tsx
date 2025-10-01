@@ -16,7 +16,7 @@ import {
 import { useState, useEffect } from 'react';
 import EbayScopeSelector from './EbayScopeSelector';
 import { EbayAccount } from '@/app/hooks/useEbayAccounts';
-import { DEFAULT_SCOPES } from '@/app/lib/constants/ebayScopes';
+import { DEFAULT_SCOPES, EBAY_OAUTH_SCOPES } from '@/app/lib/constants/ebayScopes';
 
 interface EditEbayAccountFormData {
   friendlyName: string;
@@ -79,12 +79,27 @@ export default function EditEbayAccountModal({
           }
         }
 
+        // Convert URLs to scope IDs using EBAY_OAUTH_SCOPES mapping
+        const scopeIds = parsedScopes.map(scope => {
+          // If it's already an ID, keep it
+          if (EBAY_OAUTH_SCOPES.find(s => s.id === scope)) {
+            return scope;
+          }
+          // If it's a URL, convert to ID
+          const scopeObj = EBAY_OAUTH_SCOPES.find(s => s.url === scope);
+          return scopeObj ? scopeObj.id : scope;
+        }).filter(Boolean);
+
         // Add missing required scopes using DEFAULT_SCOPES
         const missingRequiredScopes = DEFAULT_SCOPES.filter(
-          scopeId => !parsedScopes.includes(scopeId)
+          scopeId => !scopeIds.includes(scopeId)
         );
 
-        return [...parsedScopes, ...missingRequiredScopes];
+        console.log('EditEbayAccountModal - Original scopes:', parsedScopes);
+        console.log('EditEbayAccountModal - Converted scope IDs:', scopeIds);
+        console.log('EditEbayAccountModal - Final scopes with required:', [...scopeIds, ...missingRequiredScopes]);
+
+        return [...scopeIds, ...missingRequiredScopes];
       };
 
       setFormData({
