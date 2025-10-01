@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     // Use account-specific scopes or fall back to basic scopes
     const scopes = accountScopeUrls.length > 0
       ? accountScopeUrls.join(' ')
-      : `${EBAY_SCOPES.READ_BASIC} ${EBAY_SCOPES.COMMERCE}`;
+      : [EBAY_SCOPES.READ_BASIC, EBAY_SCOPES.COMMERCE].join(' ');
 
     // Generate a random state parameter for security
     const state = `${accountId}_${Math.random().toString(36).substring(2, 15)}`;

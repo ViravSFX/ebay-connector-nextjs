@@ -9,7 +9,7 @@ export const getEbayConfig = (): EbayConfig => {
   const clientId = process.env.EBAY_CLIENT_ID;
   const clientSecret = process.env.EBAY_CLIENT_SECRET;
   const redirectUri = process.env.EBAY_REDIRECT_URI;
-  const isProduction = process.env.EBAY_SANDBOX === 'false';
+  const isProduction = process.env.EBAY_SANDBOX !== 'true';
 
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error('Missing required eBay configuration in environment variables');
