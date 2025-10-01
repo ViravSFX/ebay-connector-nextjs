@@ -81,6 +81,15 @@ export async function GET(request: NextRequest) {
 
     const authUrl = `${baseUrl}?${authParams.toString()}`;
 
+    // DEBUG: Log the complete OAuth request details
+    console.log('=== PRODUCTION OAUTH DEBUG ===');
+    console.log('Environment:', process.env.EBAY_SANDBOX === 'true' ? 'SANDBOX' : 'PRODUCTION');
+    console.log('Client ID:', process.env.EBAY_CLIENT_ID);
+    console.log('Auth URL:', baseUrl);
+    console.log('Redirect URI:', process.env.EBAY_REDIRECT_URI);
+    console.log('Scopes being requested:', scopes);
+    console.log('Complete auth URL:', authUrl);
+
     // Store state in session/cookie for verification
     const response = NextResponse.redirect(authUrl);
     response.cookies.set('ebay_oauth_state', state, {
