@@ -7,7 +7,7 @@ export interface EbayScope {
   isRequired?: boolean;
 }
 
-// Authorization Code Grant Type Scopes
+// Authorization Code Grant Type Scopes - ONLY approved scopes for sfxconnector app
 export const EBAY_OAUTH_SCOPES: EbayScope[] = [
   // Required/Basic Scopes
   {
@@ -25,124 +25,6 @@ export const EBAY_OAUTH_SCOPES: EbayScope[] = [
     description: 'View user\'s basic information, such as username or business account details',
     category: 'identity',
     isRequired: true,
-  },
-
-  // Identity & Personal Information
-  {
-    id: 'identity_email',
-    url: 'https://api.ebay.com/oauth/api_scope/commerce.identity.email.readonly',
-    name: 'Email Information',
-    description: 'View user\'s personal email information',
-    category: 'identity',
-  },
-  {
-    id: 'identity_phone',
-    url: 'https://api.ebay.com/oauth/api_scope/commerce.identity.phone.readonly',
-    name: 'Phone Information',
-    description: 'View user\'s personal telephone information',
-    category: 'identity',
-  },
-  {
-    id: 'identity_address',
-    url: 'https://api.ebay.com/oauth/api_scope/commerce.identity.address.readonly',
-    name: 'Address Information',
-    description: 'View user\'s personal address information',
-    category: 'identity',
-  },
-  {
-    id: 'identity_name',
-    url: 'https://api.ebay.com/oauth/api_scope/commerce.identity.name.readonly',
-    name: 'Name Information',
-    description: 'View user\'s first and last name',
-    category: 'identity',
-  },
-  {
-    id: 'identity_status',
-    url: 'https://api.ebay.com/oauth/api_scope/commerce.identity.status.readonly',
-    name: 'Account Status',
-    description: 'View user\'s eBay member account status',
-    category: 'identity',
-  },
-
-  // Selling Operations
-  {
-    id: 'sell_inventory_readonly',
-    url: 'https://api.ebay.com/oauth/api_scope/sell.inventory.readonly',
-    name: 'View Inventory',
-    description: 'View your inventory and offers',
-    category: 'selling',
-  },
-  {
-    id: 'sell_inventory',
-    url: 'https://api.ebay.com/oauth/api_scope/sell.inventory',
-    name: 'Manage Inventory',
-    description: 'View and manage your inventory and offers',
-    category: 'selling',
-  },
-  {
-    id: 'sell_fulfillment_readonly',
-    url: 'https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly',
-    name: 'View Order Fulfillments',
-    description: 'View your order fulfillments',
-    category: 'selling',
-  },
-  {
-    id: 'sell_fulfillment',
-    url: 'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
-    name: 'Manage Order Fulfillments',
-    description: 'View and manage your order fulfillments',
-    category: 'selling',
-  },
-  {
-    id: 'sell_account_readonly',
-    url: 'https://api.ebay.com/oauth/api_scope/sell.account.readonly',
-    name: 'View Account Settings',
-    description: 'View your account settings',
-    category: 'selling',
-  },
-  {
-    id: 'sell_account',
-    url: 'https://api.ebay.com/oauth/api_scope/sell.account',
-    name: 'Manage Account Settings',
-    description: 'View and manage your account settings',
-    category: 'selling',
-  },
-  {
-    id: 'sell_item_draft',
-    url: 'https://api.ebay.com/oauth/api_scope/sell.item.draft',
-    name: 'Manage Item Drafts',
-    description: 'View and manage your item drafts',
-    category: 'selling',
-  },
-  {
-    id: 'sell_item',
-    url: 'https://api.ebay.com/oauth/api_scope/sell.item',
-    name: 'Manage Items',
-    description: 'View and manage your item information',
-    category: 'selling',
-  },
-
-  // Buying Operations
-  {
-    id: 'buy_order_readonly',
-    url: 'https://api.ebay.com/oauth/api_scope/buy.order.readonly',
-    name: 'View Order Details',
-    description: 'View your order details',
-    category: 'buying',
-  },
-  {
-    id: 'buy_shopping_cart',
-    url: 'https://api.ebay.com/oauth/api_scope/buy.shopping.cart',
-    name: 'Shopping Cart Access',
-    description: 'Access shopping carts',
-    category: 'buying',
-  },
-  {
-    id: 'buy_offer_auction',
-    url: 'https://api.ebay.com/oauth/api_scope/buy.offer.auction',
-    name: 'Auction Bidding',
-    description: 'View and manage bidding activities for auctions',
-    category: 'buying',
   },
 
   // Marketing & Analytics
@@ -167,12 +49,49 @@ export const EBAY_OAUTH_SCOPES: EbayScope[] = [
     description: 'View your selling analytics data, such as performance reports',
     category: 'analytics',
   },
+
+  // Selling Operations
   {
-    id: 'marketplace_insights_readonly',
-    url: 'https://api.ebay.com/oauth/api_scope/sell.marketplace.insights.readonly',
-    name: 'Marketplace Insights',
-    description: 'Read access to marketplace insights',
-    category: 'analytics',
+    id: 'sell_inventory_readonly',
+    url: 'https://api.ebay.com/oauth/api_scope/sell.inventory.readonly',
+    name: 'View Inventory',
+    description: 'View your inventory and offers',
+    category: 'selling',
+  },
+  {
+    id: 'sell_inventory',
+    url: 'https://api.ebay.com/oauth/api_scope/sell.inventory',
+    name: 'Manage Inventory',
+    description: 'View and manage your inventory and offers',
+    category: 'selling',
+  },
+  {
+    id: 'sell_account_readonly',
+    url: 'https://api.ebay.com/oauth/api_scope/sell.account.readonly',
+    name: 'View Account Settings',
+    description: 'View your account settings',
+    category: 'selling',
+  },
+  {
+    id: 'sell_account',
+    url: 'https://api.ebay.com/oauth/api_scope/sell.account',
+    name: 'Manage Account Settings',
+    description: 'View and manage your account settings',
+    category: 'selling',
+  },
+  {
+    id: 'sell_fulfillment_readonly',
+    url: 'https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly',
+    name: 'View Order Fulfillments',
+    description: 'View your order fulfillments',
+    category: 'selling',
+  },
+  {
+    id: 'sell_fulfillment',
+    url: 'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
+    name: 'Manage Order Fulfillments',
+    description: 'View and manage your order fulfillments',
+    category: 'selling',
   },
 
   // Financial & Reputation
@@ -198,14 +117,32 @@ export const EBAY_OAUTH_SCOPES: EbayScope[] = [
     category: 'selling',
   },
 
-  // Other Services
+  // Payment & Disputes
   {
-    id: 'commerce_catalog_readonly',
-    url: 'https://api.ebay.com/oauth/api_scope/commerce.catalog.readonly',
-    name: 'Catalog Access',
-    description: 'Read catalog data',
+    id: 'sell_payment_dispute',
+    url: 'https://api.ebay.com/oauth/api_scope/sell.payment.dispute',
+    name: 'Payment Disputes',
+    description: 'View and manage payment disputes',
+    category: 'selling',
+  },
+
+  // Notifications
+  {
+    id: 'commerce_notification_subscription_readonly',
+    url: 'https://api.ebay.com/oauth/api_scope/commerce.notification.subscription.readonly',
+    name: 'View Notifications',
+    description: 'View notification subscriptions',
     category: 'other',
   },
+  {
+    id: 'commerce_notification_subscription',
+    url: 'https://api.ebay.com/oauth/api_scope/commerce.notification.subscription',
+    name: 'Manage Notifications',
+    description: 'View and manage notification subscriptions',
+    category: 'other',
+  },
+
+  // eBay Stores
   {
     id: 'sell_stores_readonly',
     url: 'https://api.ebay.com/oauth/api_scope/sell.stores.readonly',
@@ -219,6 +156,24 @@ export const EBAY_OAUTH_SCOPES: EbayScope[] = [
     name: 'Manage eBay Stores',
     description: 'View and manage eBay stores',
     category: 'selling',
+  },
+
+  // eDelivery (Note: uses /scope/ not /api_scope/)
+  {
+    id: 'sell_edelivery',
+    url: 'https://api.ebay.com/oauth/scope/sell.edelivery',
+    name: 'eDelivery Services',
+    description: 'Access eDelivery services for digital goods',
+    category: 'selling',
+  },
+
+  // VERO Program
+  {
+    id: 'commerce_vero',
+    url: 'https://api.ebay.com/oauth/api_scope/commerce.vero',
+    name: 'VERO Program',
+    description: 'Access Verified Rights Owner program features',
+    category: 'other',
   },
 ];
 
