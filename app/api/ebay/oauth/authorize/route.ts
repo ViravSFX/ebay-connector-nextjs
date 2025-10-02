@@ -39,32 +39,45 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Parse the selected scopes from the database
-    const selectedScopeIds = Array.isArray(account.userSelectedScopes)
-      ? account.userSelectedScopes
-      : typeof account.userSelectedScopes === 'string'
-        ? (account.userSelectedScopes ? JSON.parse(account.userSelectedScopes) : [])
+    // Parse the selected scopes from the database with type casting
+    const accountData = account as any;
+    const selectedScopeIds = Array.isArray(accountData.userSelectedScopes)
+      ? accountData.userSelectedScopes
+      : typeof accountData.userSelectedScopes === 'string'
+        ? (accountData.userSelectedScopes ? JSON.parse(accountData.userSelectedScopes) : [])
         : [];
 
-    // Convert scope IDs to eBay scope URLs
-    // Use full scopes for both environments since production app has permissions
-    const essentialScopeIds = [
-      'api_scope',
-      'identity_readonly',
-      'sell_inventory',
-      'sell_account',
-      'sell_fulfillment'
-    ];
+    // Convert user selected scope IDs to eBay scope URLs dynamically
+    console.log('=== DYNAMIC SCOPE SELECTION ===');
+    console.log('User selected scopes from DB:', selectedScopeIds);
 
-    const accountScopeUrls = essentialScopeIds
+    const accountScopeUrls = selectedScopeIds
       .map((scopeId: string) => {
         const scope = EBAY_OAUTH_SCOPES.find(s => s.id === scopeId);
-        return scope ? scope.url : null;
+        if (scope) {
+          console.log(`✅ Mapped scope ID "${scopeId}" to URL: ${scope.url}`);
+          return scope.url;
+        } else {
+          console.log(`❌ Could not find URL for scope ID: ${scopeId}`);
+          return null;
+        }
       })
       .filter(Boolean); // Remove any null values
 
-    // Use the essential scopes (already includes api_scope)
+    // Always ensure basic API scope is included
+    const basicScope = EBAY_SCOPES.READ_BASIC;
+    if (!accountScopeUrls.includes(basicScope)) {
+      console.log(`➕ Adding basic API scope: ${basicScope}`);
+      accountScopeUrls.unshift(basicScope);
+    }
+
+    // Use the user-selected scopes
     const scopes = accountScopeUrls.join(' ');
+
+    console.log('=== FINAL SCOPE SELECTION ===');
+    console.log('Total scopes being requested:', accountScopeUrls.length);
+    console.log('Scope URLs:', accountScopeUrls);
+    console.log('Scopes string:', scopes);
 
     // Generate a random state parameter for security
     const state = `${accountId}_${Math.random().toString(36).substring(2, 15)}`;
