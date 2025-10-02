@@ -28,9 +28,8 @@ export async function GET(request: NextRequest) {
 
     // Fetch the account to get its selected scopes
     const account = await prisma.ebayUserToken.findUnique({
-      where: { id: accountId },
-      select: { userSelectedScopes: true }
-    });
+      where: { id: accountId }
+    }) as any;
 
     if (!account) {
       return NextResponse.json(
@@ -92,14 +91,9 @@ export async function GET(request: NextRequest) {
     console.log('Environment:', config.isProduction ? 'PRODUCTION' : 'SANDBOX');
     console.log('Using RuName (as per eBay docs):', redirectValue);
 
-    const authParams = new URLSearchParams();
-    authParams.append('client_id', process.env.EBAY_CLIENT_ID!);
-    authParams.append('response_type', 'code');
-    authParams.append('redirect_uri', redirectValue);
-    authParams.append('scope', scopes);
-    authParams.append('state', state);
-
-    const authUrl = `${baseUrl}?${authParams.toString()}`;
+    // Manually construct URL to avoid over-encoding the scope URLs
+    const encodedScopes = scopes.replace(/ /g, '%20'); // Only encode spaces as %20
+    const authUrl = `${baseUrl}?client_id=${process.env.EBAY_CLIENT_ID}&response_type=code&redirect_uri=${redirectValue}&scope=${encodedScopes}&state=${state}`;
 
     // DEBUG: Log the complete OAuth request details
     console.log('=== PRODUCTION OAUTH DEBUG ===');
@@ -114,12 +108,6 @@ export async function GET(request: NextRequest) {
     console.log('State:', state);
     console.log('Complete auth URL:', authUrl);
     console.log('Auth URL Length:', authUrl.length);
-
-    // Test if any parameters contain invalid characters
-    console.log('=== PARAMETER VALIDATION ===');
-    console.log('Client ID valid:', /^[a-zA-Z0-9\-_]+$/.test(process.env.EBAY_CLIENT_ID || ''));
-    console.log('Redirect URI valid:', /^https?:\/\/.+/.test(process.env.EBAY_REDIRECT_URI || ''));
-    console.log('Scopes contain only valid chars:', /^[a-zA-Z0-9\/:._\s]+$/.test(scopes));
 
     // Store state in session/cookie for verification
     const response = NextResponse.redirect(authUrl);

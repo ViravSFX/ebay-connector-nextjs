@@ -198,6 +198,47 @@ export const EBAY_OAUTH_SCOPES: EbayScope[] = [
     category: 'selling',
   },
 
+  // Payment & Disputes
+  {
+    id: 'sell_payment_dispute',
+    url: 'https://api.ebay.com/oauth/api_scope/sell.payment.dispute',
+    name: 'Payment Disputes',
+    description: 'View and manage payment disputes',
+    category: 'selling',
+  },
+
+  // Notifications
+  {
+    id: 'commerce_notification_subscription_readonly',
+    url: 'https://api.ebay.com/oauth/api_scope/commerce.notification.subscription.readonly',
+    name: 'View Notifications',
+    description: 'View notification subscriptions',
+    category: 'other',
+  },
+  {
+    id: 'commerce_notification_subscription',
+    url: 'https://api.ebay.com/oauth/api_scope/commerce.notification.subscription',
+    name: 'Manage Notifications',
+    description: 'View and manage notification subscriptions',
+    category: 'other',
+  },
+
+  // eDelivery & VERO
+  {
+    id: 'sell_edelivery',
+    url: 'https://api.ebay.com/oauth/scope/sell.edelivery',
+    name: 'eDelivery Services',
+    description: 'Access eDelivery services for digital goods',
+    category: 'selling',
+  },
+  {
+    id: 'commerce_vero',
+    url: 'https://api.ebay.com/oauth/api_scope/commerce.vero',
+    name: 'VERO Program',
+    description: 'Access Verified Rights Owner program features',
+    category: 'other',
+  },
+
   // Other Services
   {
     id: 'commerce_catalog_readonly',
