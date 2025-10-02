@@ -128,6 +128,24 @@ export class EbayListingService {
     this.baseInventoryUrl = EBAY_INVENTORY_API_URLS[environment];
     this.baseAccountUrl = EBAY_ACCOUNT_API_URLS[environment];
 
+    // Check token expiration
+    const expiresAt = new Date(account.expiresAt);
+    const now = new Date();
+    const isExpired = expiresAt < now;
+
+    console.log('=== TOKEN VALIDATION DEBUG ===');
+    console.log('Account ID:', account.id);
+    console.log('Environment:', environment);
+    console.log('Token expires at:', expiresAt.toISOString());
+    console.log('Current time:', now.toISOString());
+    console.log('Token is expired:', isExpired);
+    console.log('Token length:', account.accessToken?.length);
+    console.log('Token preview:', account.accessToken?.substring(0, 20) + '...');
+
+    if (isExpired) {
+      throw new Error(`Access token expired at ${expiresAt.toISOString()}. Please reconnect the account.`);
+    }
+
     // Decrypt access token - you'll need to implement this based on your encryption method
     this.accessToken = this.decryptToken(account.accessToken as string);
   }
@@ -141,15 +159,27 @@ export class EbayListingService {
   private async makeEbayRequest(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: any): Promise<any> {
     const url = `${this.baseInventoryUrl}${endpoint}`;
 
+    // Debug the exact request being made
+    console.log('=== EBAY API REQUEST DEBUG ===');
+    console.log('URL:', url);
+    console.log('Method:', method);
+    console.log('Access Token Length:', this.accessToken?.length);
+    console.log('Access Token Preview:', this.accessToken?.substring(0, 30) + '...');
+    console.log('Authorization Header:', `Bearer ${this.accessToken?.substring(0, 30)}...`);
+
+    const headers = {
+      'Authorization': `Bearer ${this.accessToken}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Content-Language': 'en-US'
+    };
+
+    console.log('Full Headers:', headers);
+
     try {
       const response = await fetch(url, {
         method,
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Content-Language': 'en-US'
-        },
+        headers,
         body: body ? JSON.stringify(body) : undefined
       });
 
