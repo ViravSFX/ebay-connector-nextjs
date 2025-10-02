@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         : [];
 
     // Convert scope IDs to eBay scope URLs
-    // LIMIT to essential scopes only for production stability
+    // Use full scopes for both environments since production app has permissions
     const essentialScopeIds = [
       'api_scope',
       'identity_readonly',
@@ -63,30 +63,22 @@ export async function GET(request: NextRequest) {
       })
       .filter(Boolean); // Remove any null values
 
-    // Always include basic API scope if not already present
-    const basicScope = EBAY_SCOPES.READ_BASIC;
-    if (!accountScopeUrls.includes(basicScope)) {
-      accountScopeUrls.unshift(basicScope);
-    }
-
-    // Use account-specific scopes or fall back to basic scopes
-    const scopes = accountScopeUrls.length > 0
-      ? accountScopeUrls.join(' ')
-      : [EBAY_SCOPES.READ_BASIC, EBAY_SCOPES.COMMERCE].join(' ');
+    // Use the essential scopes (already includes api_scope)
+    const scopes = accountScopeUrls.join(' ');
 
     // Generate a random state parameter for security
     const state = `${accountId}_${Math.random().toString(36).substring(2, 15)}`;
 
-    // Temporarily build authorization URL manually to bypass the library issue
+    // Build authorization URL manually with explicit encoding
     const baseUrl = urls.auth;
 
-    const authParams = new URLSearchParams({
-      client_id: process.env.EBAY_CLIENT_ID,
-      response_type: 'code',
-      redirect_uri: process.env.EBAY_REDIRECT_URI,
-      scope: scopes,
-      state: state
-    });
+    // Test with minimal required parameters first
+    const authParams = new URLSearchParams();
+    authParams.append('client_id', process.env.EBAY_CLIENT_ID!);
+    authParams.append('response_type', 'code');
+    authParams.append('redirect_uri', process.env.EBAY_REDIRECT_URI!);
+    authParams.append('scope', scopes);
+    authParams.append('state', state);
 
     const authUrl = `${baseUrl}?${authParams.toString()}`;
 
@@ -94,10 +86,21 @@ export async function GET(request: NextRequest) {
     console.log('=== PRODUCTION OAUTH DEBUG ===');
     console.log('Environment:', process.env.EBAY_SANDBOX === 'true' ? 'SANDBOX' : 'PRODUCTION');
     console.log('Client ID:', process.env.EBAY_CLIENT_ID);
+    console.log('Client ID Length:', process.env.EBAY_CLIENT_ID?.length);
     console.log('Auth URL:', baseUrl);
     console.log('Redirect URI:', process.env.EBAY_REDIRECT_URI);
+    console.log('Redirect URI Length:', process.env.EBAY_REDIRECT_URI?.length);
     console.log('Scopes being requested:', scopes);
+    console.log('Scopes length:', scopes.length);
+    console.log('State:', state);
     console.log('Complete auth URL:', authUrl);
+    console.log('Auth URL Length:', authUrl.length);
+
+    // Test if any parameters contain invalid characters
+    console.log('=== PARAMETER VALIDATION ===');
+    console.log('Client ID valid:', /^[a-zA-Z0-9\-_]+$/.test(process.env.EBAY_CLIENT_ID || ''));
+    console.log('Redirect URI valid:', /^https?:\/\/.+/.test(process.env.EBAY_REDIRECT_URI || ''));
+    console.log('Scopes contain only valid chars:', /^[a-zA-Z0-9\/:._\s]+$/.test(scopes));
 
     // Store state in session/cookie for verification
     const response = NextResponse.redirect(authUrl);
