@@ -180,6 +180,9 @@ export const EBAY_OAUTH_SCOPES: EbayScope[] = [
 // Default scope selection for new accounts
 export const DEFAULT_SCOPES = EBAY_OAUTH_SCOPES.filter(scope => scope.isRequired).map(scope => scope.id);
 
+// Minimal scopes that should work in both sandbox and production
+export const MINIMAL_SCOPES = ['api_scope', 'identity_readonly', 'sell_inventory_readonly', 'sell_inventory'];
+
 // Scope categories for UI organization
 export const SCOPE_CATEGORIES = {
   identity: {

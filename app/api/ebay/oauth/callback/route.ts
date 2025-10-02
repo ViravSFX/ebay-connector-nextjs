@@ -21,27 +21,41 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/ebay-connections?error=oauth_failed', baseUrl));
     }
 
-    if (!code || !state) {
+    if (!code) {
       console.error('Missing required parameters:', { code: !!code, state: !!state });
       return NextResponse.redirect(new URL('/ebay-connections?error=missing_params', baseUrl));
     }
 
-    // Verify state parameter
-    const storedState = request.cookies.get('ebay_oauth_state')?.value;
+    // Handle state parameter (might be missing in consent flow)
+    if (state) {
+      // Verify state parameter only if present
+      const storedState = request.cookies.get('ebay_oauth_state')?.value;
 
-    console.log('=== STATE PARAMETER DEBUG ===');
-    console.log('Received state from eBay:', state);
-    console.log('Stored state in cookie:', storedState);
-    console.log('States match:', storedState === state);
+      console.log('=== STATE PARAMETER DEBUG ===');
+      console.log('Received state from eBay:', state);
+      console.log('Stored state in cookie:', storedState);
+      console.log('States match:', storedState === state);
 
-    if (!storedState || storedState !== state) {
-      console.error('State parameter mismatch or missing');
-      console.error('This usually means multiple OAuth requests or expired cookie');
-      return NextResponse.redirect(new URL('/ebay-connections?error=invalid_state', baseUrl));
+      if (!storedState || storedState !== state) {
+        console.error('State parameter mismatch or missing');
+        console.error('This usually means multiple OAuth requests or expired cookie');
+        return NextResponse.redirect(new URL('/ebay-connections?error=invalid_state', baseUrl));
+      }
+    } else {
+      console.warn('State parameter missing - this might be from consent flow');
     }
 
-    // Extract account ID from state
-    const accountId = state.split('_')[0];
+    // Extract account ID from state (if available)
+    let accountId: string | null = null;
+
+    if (state) {
+      accountId = state.split('_')[0];
+    } else {
+      // For consent flow without state, try to get from referrer or use a fallback
+      console.warn('No state parameter - cannot determine account ID from consent flow');
+      // You may need to store account ID in session/cookie or get from referrer
+      return NextResponse.redirect(new URL('/ebay-connections?error=missing_account_id', baseUrl));
+    }
 
     if (!accountId) {
       console.error('Could not extract account ID from state');
