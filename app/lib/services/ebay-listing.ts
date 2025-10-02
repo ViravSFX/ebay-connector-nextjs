@@ -88,7 +88,7 @@ export interface OfferRequest {
     thirdPartyTaxCategory?: string;
     vatPercentage?: number;
   };
-  listingPolicies: {
+  listingPolicies?: {
     paymentPolicyId?: string;
     returnPolicyId?: string;
     fulfillmentPolicyId?: string;
