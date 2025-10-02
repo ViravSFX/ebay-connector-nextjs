@@ -82,14 +82,20 @@ export async function GET(request: NextRequest) {
     // Generate a random state parameter for security
     const state = `${accountId}_${Math.random().toString(36).substring(2, 15)}`;
 
-    // Build authorization URL manually with explicit encoding
+    // Build authorization URL manually with RuName
     const baseUrl = urls.auth;
 
-    // Test with minimal required parameters first
+    // Use RuName for both sandbox and production as per eBay documentation
+    const redirectValue = process.env.EBAY_REDIRECT_URI!;
+
+    console.log('=== OAUTH REDIRECT CONFIGURATION ===');
+    console.log('Environment:', config.isProduction ? 'PRODUCTION' : 'SANDBOX');
+    console.log('Using RuName (as per eBay docs):', redirectValue);
+
     const authParams = new URLSearchParams();
     authParams.append('client_id', process.env.EBAY_CLIENT_ID!);
     authParams.append('response_type', 'code');
-    authParams.append('redirect_uri', process.env.EBAY_REDIRECT_URI!);
+    authParams.append('redirect_uri', redirectValue);
     authParams.append('scope', scopes);
     authParams.append('state', state);
 

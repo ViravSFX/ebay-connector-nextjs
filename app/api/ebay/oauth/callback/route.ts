@@ -61,10 +61,17 @@ export async function GET(request: NextRequest) {
 
     const credentials = Buffer.from(`${process.env.EBAY_CLIENT_ID}:${process.env.EBAY_CLIENT_SECRET}`).toString('base64');
 
+    // Use RuName for both sandbox and production as per eBay documentation
+    const redirectValue = process.env.EBAY_REDIRECT_URI;
+
+    console.log('=== TOKEN EXCHANGE REDIRECT CONFIGURATION ===');
+    console.log('Environment:', process.env.EBAY_SANDBOX === 'true' ? 'SANDBOX' : 'PRODUCTION');
+    console.log('Using RuName (as per eBay docs):', redirectValue);
+
     const tokenParams = new URLSearchParams({
       grant_type: 'authorization_code',
       code: code,
-      redirect_uri: process.env.EBAY_REDIRECT_URI
+      redirect_uri: redirectValue!
     });
 
     const tokenResponse = await fetch(tokenUrl, {
@@ -146,8 +153,7 @@ export async function GET(request: NextRequest) {
 
     // Get the account's selected scopes before updating
     const existingAccount = await prisma.ebayUserToken.findUnique({
-      where: { id: accountId },
-      select: { userSelectedScopes: true }
+      where: { id: accountId }
     }) as any;
 
     // DEBUG: Log existing account data
