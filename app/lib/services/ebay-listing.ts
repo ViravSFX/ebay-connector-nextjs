@@ -124,7 +124,7 @@ export class EbayListingService {
   private accessToken: string;
 
   constructor(account: EbayAccount) {
-    const environment = process.env.EBAY_ENVIRONMENT === 'production' ? 'production' : 'sandbox';
+    const environment = process.env.EBAY_SANDBOX === 'false' ? 'production' : 'sandbox';
     this.baseInventoryUrl = EBAY_INVENTORY_API_URLS[environment];
     this.baseAccountUrl = EBAY_ACCOUNT_API_URLS[environment];
 
@@ -135,12 +135,17 @@ export class EbayListingService {
 
     console.log('=== TOKEN VALIDATION DEBUG ===');
     console.log('Account ID:', account.id);
-    console.log('Environment:', environment);
+    console.log('Environment detected:', environment);
+    console.log('EBAY_SANDBOX env var:', process.env.EBAY_SANDBOX);
+    console.log('Using API URLs:');
+    console.log('  Inventory:', this.baseInventoryUrl);
+    console.log('  Account:', this.baseAccountUrl);
     console.log('Token expires at:', expiresAt.toISOString());
     console.log('Current time:', now.toISOString());
     console.log('Token is expired:', isExpired);
     console.log('Token length:', account.accessToken?.length);
     console.log('Token preview:', account.accessToken?.substring(0, 20) + '...');
+    console.log('Token starts with "v^1.1":', account.accessToken?.startsWith('v^1.1'));
 
     if (isExpired) {
       throw new Error(`Access token expired at ${expiresAt.toISOString()}. Please reconnect the account.`);
@@ -166,12 +171,14 @@ export class EbayListingService {
     console.log('Access Token Length:', this.accessToken?.length);
     console.log('Access Token Preview:', this.accessToken?.substring(0, 30) + '...');
     console.log('Authorization Header:', `Bearer ${this.accessToken?.substring(0, 30)}...`);
+    console.log('Request body:', body ? JSON.stringify(body, null, 2) : 'No body');
 
     const headers = {
       'Authorization': `Bearer ${this.accessToken}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Content-Language': 'en-US'
+      'Content-Language': 'en-US',
+      'Accept-Language': 'en-US'
     };
 
     console.log('Full Headers:', headers);
@@ -185,6 +192,11 @@ export class EbayListingService {
 
       if (!response.ok) {
         const errorData = await response.text();
+        console.error('=== EBAY API ERROR RESPONSE ===');
+        console.error('Status:', response.status);
+        console.error('Status Text:', response.statusText);
+        console.error('Response Headers:', Object.fromEntries(response.headers.entries()));
+        console.error('Error Data:', errorData);
         throw new Error(`eBay API Error: ${response.status} ${response.statusText} - ${errorData}`);
       }
 
@@ -238,7 +250,7 @@ export class EbayListingService {
 
   async createInventoryLocation(location: InventoryLocation): Promise<any> {
     const { merchantLocationKey, ...locationData } = location;
-    return this.makeEbayRequest(`/location/${merchantLocationKey}`, 'POST', locationData);
+    return this.makeEbayRequest(`/location/${merchantLocationKey}`, 'PUT', locationData);
   }
 
   async updateInventoryLocation(merchantLocationKey: string, location: Partial<InventoryLocation>): Promise<any> {
@@ -335,19 +347,112 @@ export class EbayListingService {
     const results: any = {};
 
     try {
-      // Step 1: Create location if provided
+      // First, test if we can access the inventory API at all
+      console.log('Testing inventory API access...');
+      try {
+        const testResponse = await this.getInventoryItems(1, 0);
+        console.log('✅ Inventory API access test successful');
+      } catch (testError) {
+        console.error('❌ Inventory API access test failed:', testError);
+        throw new Error('Cannot access eBay Inventory API. Check token scopes and permissions.');
+      }
+
+      // Step 1: Create location (required for publishing)
       if (params.location) {
         console.log('Creating inventory location...');
         results.location = await this.createInventoryLocation(params.location);
+      } else {
+        // Create a default location if none provided (required for publishing)
+        console.log('Creating default inventory location (required for publishing)...');
+        const defaultLocation: InventoryLocation = {
+          merchantLocationKey: 'default-location-001',
+          name: 'Default Location',
+          address: {
+            addressLine1: '123 Main Street',
+            city: 'New York',
+            stateOrProvince: 'NY',
+            postalCode: '10001',
+            countryCode: 'US'
+          },
+          locationTypes: ['WAREHOUSE'],
+          merchantLocationStatus: 'ENABLED'
+        };
+
+        try {
+          results.location = await this.createInventoryLocation(defaultLocation);
+          console.log('✅ Default location created successfully');
+        } catch (locationError) {
+          console.log('⚠️ Default location might already exist, continuing...');
+          // Location might already exist, that's okay
+        }
       }
 
       // Step 2: Create/Update inventory item
       console.log('Creating inventory item...');
       results.inventoryItem = await this.createOrUpdateInventoryItem(params.inventoryItem);
 
-      // Step 3: Create offer
+      // Step 2.5: Handle business policies (optional for basic accounts)
+      console.log('Checking business policy eligibility...');
+      let updatedOffer = { ...params.offer };
+
+      try {
+        const [paymentPolicies, fulfillmentPolicies, returnPolicies] = await Promise.all([
+          this.getPaymentPolicies(),
+          this.getFulfillmentPolicies(),
+          this.getReturnPolicies()
+        ]);
+
+        console.log('✅ Business policies available:');
+        console.log('Payment Policies:', paymentPolicies.length);
+        console.log('Fulfillment Policies:', fulfillmentPolicies.length);
+        console.log('Return Policies:', returnPolicies.length);
+
+        // Use business policies if available
+        updatedOffer.listingPolicies = {
+          paymentPolicyId: paymentPolicies[0]?.id,
+          fulfillmentPolicyId: fulfillmentPolicies[0]?.id,
+          returnPolicyId: returnPolicies[0]?.id
+        };
+
+        console.log('Using Business Policy IDs:', updatedOffer.listingPolicies);
+      } catch (policyError) {
+        console.log('⚠️ Business policies not available (basic account)');
+        console.log('Creating offer without business policies...');
+
+        // Remove listingPolicies entirely for basic accounts
+        const { listingPolicies, ...offerWithoutPolicies } = updatedOffer;
+        updatedOffer = offerWithoutPolicies;
+      }
+
+      // Ensure offer has location reference (required for publishing)
+      if (!updatedOffer.merchantLocationKey) {
+        updatedOffer.merchantLocationKey = 'default-location-001';
+        console.log('Added default merchant location key to offer');
+      }
+
+      // Step 3: Create or get existing offer
       console.log('Creating offer...');
-      results.offer = await this.createOffer(params.offer);
+      try {
+        results.offer = await this.createOffer(updatedOffer);
+        console.log('✅ New offer created with ID:', results.offer.offerId);
+      } catch (offerError: any) {
+        // Check if offer already exists
+        if (offerError.message?.includes('Offer entity already exists')) {
+          console.log('⚠️ Offer already exists for this SKU, fetching existing offers...');
+
+          // Get existing offers for this SKU
+          const existingOffers = await this.getOffers(25, 0, updatedOffer.sku);
+
+          if (existingOffers.offers && existingOffers.offers.length > 0) {
+            results.offer = existingOffers.offers[0];
+            console.log('✅ Using existing offer with ID:', results.offer.offerId);
+          } else {
+            throw new Error('Could not find existing offer despite error message');
+          }
+        } else {
+          throw offerError;
+        }
+      }
 
       // Step 4: Publish offer if requested
       if (params.publish && results.offer.offerId) {
