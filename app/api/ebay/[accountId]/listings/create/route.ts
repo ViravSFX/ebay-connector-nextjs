@@ -1,16 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../../../lib/services/database';
-import { EbayListingService, InventoryLocation, InventoryItemRequest, OfferRequest, validateInventoryItem, validateOfferRequest } from '../../../../../lib/services/ebay-listing';
+import { EbayListingService } from '../../../../../lib/services/ebay-listing';
 
 interface CreateListingRequest {
-  // Optional location (if needed)
-  location?: InventoryLocation;
+  // SKU - unique identifier for the item
+  sku: string;
 
-  // Required inventory item
-  inventoryItem: InventoryItemRequest;
+  // Location information
+  location?: {
+    merchantLocationKey: string;
+    name?: string;
+    address: {
+      addressLine1?: string;
+      city?: string;
+      stateOrProvince?: string;
+      postalCode?: string;
+      country: string; // Required - 2-letter ISO code
+    };
+  };
 
-  // Required offer
-  offer: OfferRequest;
+  // Inventory item data
+  availability?: {
+    shipToLocationAvailability?: {
+      quantity: number;
+    };
+  };
+  condition?: string;
+  product?: {
+    title: string;
+    description: string;
+    imageUrls: string[];
+    brand?: string;
+    mpn?: string;
+    aspects?: Record<string, string[]>;
+  };
+
+  // Offer data
+  marketplaceId?: string;
+  format?: string;
+  categoryId?: string;
+  pricingSummary?: {
+    price: {
+      value: string;
+      currency: string;
+    };
+  };
+  availableQuantity?: number;
+  listingDuration?: string;
+  listingPolicies?: {
+    fulfillmentPolicyId?: string;
+    paymentPolicyId?: string;
+    returnPolicyId?: string;
+  };
+  // Inline shipping details for basic accounts
+  shippingCostOverrides?: Array<{
+    priority: number;
+    shippingCost?: {
+      value: string;
+      currency: string;
+    };
+    shippingServiceType: string;
+  }>;
 
   // Whether to immediately publish (default: false)
   publish?: boolean;
@@ -28,61 +78,37 @@ export async function POST(
     const body: CreateListingRequest = await request.json();
 
     // Validate required fields
-    if (!body.inventoryItem) {
+    if (!body.sku) {
       return NextResponse.json(
         {
           success: false,
-          message: 'inventoryItem is required',
+          message: 'SKU is required',
         },
         { status: 400 }
       );
     }
 
-    if (!body.offer) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'offer is required',
-        },
-        { status: 400 }
-      );
-    }
+    // Validate required product fields if publishing
+    if (body.publish) {
+      if (!body.product?.title || !body.product?.description || !body.product?.imageUrls?.length) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Product title, description, and at least one image URL are required for publishing',
+          },
+          { status: 400 }
+        );
+      }
 
-    // Validate inventory item
-    const inventoryValidationErrors = validateInventoryItem(body.inventoryItem);
-    if (inventoryValidationErrors.length > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Inventory item validation failed',
-          errors: inventoryValidationErrors,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate offer
-    const offerValidationErrors = validateOfferRequest(body.offer);
-    if (offerValidationErrors.length > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Offer validation failed',
-          errors: offerValidationErrors,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Ensure SKU consistency
-    if (body.inventoryItem.sku !== body.offer.sku) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'SKU must match between inventory item and offer',
-        },
-        { status: 400 }
-      );
+      if (!body.categoryId || !body.pricingSummary || !body.availableQuantity) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Category ID, pricing, and available quantity are required for publishing',
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Get the eBay account
@@ -103,23 +129,111 @@ export async function POST(
     // Initialize eBay service
     const ebayService = new EbayListingService(account);
 
+    // Log the complete request data being sent to eBay
+    console.log('=== COMPLETE REQUEST DATA TO EBAY API ===');
+    console.log(JSON.stringify(body, null, 2));
+    console.log('=== END REQUEST DATA ===');
+
     // Execute complete listing creation workflow
-    console.log(`[CREATE LISTING API] Starting complete listing creation for SKU: ${body.inventoryItem.sku}`);
+    console.log(`[CREATE LISTING API] Starting complete listing creation for SKU: ${body.sku}`);
 
-    const result = await ebayService.createCompleteListing({
-      location: body.location,
-      inventoryItem: body.inventoryItem,
-      offer: body.offer,
-      publish: body.publish || false,
-    });
+    const results: any = {
+      location: null,
+      inventoryItem: null,
+      offer: null,
+      listing: null
+    };
 
-    console.log(`[CREATE LISTING API] Successfully created listing for SKU: ${body.inventoryItem.sku}`);
+    try {
+      // Step 1: Create location if provided
+      if (body.location) {
+        console.log('[CREATE LISTING API] Creating location...');
+        try {
+          const locationData: any = {
+            ...body.location,
+            locationTypes: ['WAREHOUSE']
+          };
+          results.location = await ebayService.createInventoryLocation(locationData);
+          console.log('[CREATE LISTING API] Location created successfully');
+        } catch (error: any) {
+          // Continue if location already exists (204 status)
+          if (!error.message.includes('204') && !error.message.includes('already exists')) {
+            throw error;
+          }
+          console.log('[CREATE LISTING API] Location already exists, continuing...');
+        }
+      }
+
+      // Step 2: Create or update inventory item
+      console.log('[CREATE LISTING API] Creating inventory item...');
+      const inventoryData: any = {};
+      if (body.availability) inventoryData.availability = body.availability;
+      if (body.condition) inventoryData.condition = body.condition;
+      if (body.product) inventoryData.product = body.product;
+
+      results.inventoryItem = await ebayService.createOrUpdateInventoryItem({
+        sku: body.sku,
+        ...inventoryData
+      });
+      console.log('[CREATE LISTING API] Inventory item created successfully');
+
+      // Step 3: Create offer
+      console.log('[CREATE LISTING API] Creating offer...');
+      const offerData: any = {
+        sku: body.sku,
+        marketplaceId: body.marketplaceId || 'EBAY_US',
+        format: body.format || 'FIXED_PRICE'
+      };
+
+      if (body.categoryId) offerData.categoryId = body.categoryId;
+      if (body.pricingSummary) offerData.pricingSummary = body.pricingSummary;
+      if (body.availableQuantity) offerData.availableQuantity = body.availableQuantity;
+      if (body.location?.merchantLocationKey) offerData.merchantLocationKey = body.location.merchantLocationKey;
+      if (body.listingDuration) offerData.listingDuration = body.listingDuration;
+      if (body.listingPolicies) offerData.listingPolicies = body.listingPolicies;
+      if (body.shippingCostOverrides) offerData.shippingCostOverrides = body.shippingCostOverrides;
+
+      results.offer = await ebayService.createOffer(offerData);
+      console.log('[CREATE LISTING API] Offer created:', results.offer);
+
+      // Step 4: Publish if requested
+      if (body.publish && results.offer.offerId) {
+        console.log('[CREATE LISTING API] Publishing offer...');
+        try {
+          results.listing = await ebayService.publishOffer(results.offer.offerId);
+          console.log('[CREATE LISTING API] Offer published successfully');
+        } catch (error: any) {
+          console.error('[CREATE LISTING API] Publish error:', error.message);
+          // Return partial success
+          return NextResponse.json({
+            success: true,
+            data: {
+              sku: body.sku,
+              steps_completed: ['inventory_item_created', 'offer_created'],
+              details: results,
+            },
+            message: 'Listing created but not published. Check the error for details.',
+            publishError: error.message,
+            metadata: {
+              account_used: account.friendlyName || account.ebayUsername,
+              account_id: accountId,
+            },
+          });
+        }
+      }
+    } catch (error: any) {
+      throw error;
+    }
+
+    const result = results;
+
+    console.log(`[CREATE LISTING API] Successfully created listing for SKU: ${body.sku}`);
 
     // Prepare response based on what was created
     const response: any = {
       success: true,
       data: {
-        sku: body.inventoryItem.sku,
+        sku: body.sku,
         steps_completed: [],
         details: result,
       },

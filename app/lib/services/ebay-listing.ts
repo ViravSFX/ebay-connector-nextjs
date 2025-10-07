@@ -23,10 +23,10 @@ export interface InventoryLocation {
     city: string;
     stateOrProvince: string;
     postalCode: string;
-    countryCode: string;
+    country: string;  // Changed from countryCode to country
   };
-  locationTypes: ('STORE' | 'WAREHOUSE')[];
-  merchantLocationStatus: 'ENABLED' | 'DISABLED';
+  locationTypes: ('STORE' | 'WAREHOUSE' | 'FULFILLMENT_CENTER')[];  // Added FULFILLMENT_CENTER
+  merchantLocationStatus?: 'ENABLED' | 'DISABLED';  // Made optional
 }
 
 export interface InventoryItemRequest {
@@ -83,6 +83,7 @@ export interface OfferRequest {
   listingDuration?: 'DAYS_1' | 'DAYS_3' | 'DAYS_5' | 'DAYS_7' | 'DAYS_10' | 'DAYS_30' | 'GTC';
   categoryId: string;
   merchantLocationKey?: string;
+  availableQuantity?: number;
   tax?: {
     applyTax: boolean;
     thirdPartyTaxCategory?: string;
@@ -122,16 +123,21 @@ export class EbayListingService {
   private baseInventoryUrl: string;
   private baseAccountUrl: string;
   private accessToken: string;
+  private refreshToken: string | null;
+  private accountId: string;
+  private tokenExpiresAt: Date;
 
   constructor(account: EbayAccount) {
     const environment = process.env.EBAY_SANDBOX === 'false' ? 'production' : 'sandbox';
     this.baseInventoryUrl = EBAY_INVENTORY_API_URLS[environment];
     this.baseAccountUrl = EBAY_ACCOUNT_API_URLS[environment];
+    this.accountId = account.id;
+    this.refreshToken = account.refreshToken;
+    this.tokenExpiresAt = new Date(account.expiresAt);
 
     // Check token expiration
-    const expiresAt = new Date(account.expiresAt);
     const now = new Date();
-    const isExpired = expiresAt < now;
+    const isExpired = this.tokenExpiresAt < now;
 
     console.log('=== TOKEN VALIDATION DEBUG ===');
     console.log('Account ID:', account.id);
@@ -140,18 +146,15 @@ export class EbayListingService {
     console.log('Using API URLs:');
     console.log('  Inventory:', this.baseInventoryUrl);
     console.log('  Account:', this.baseAccountUrl);
-    console.log('Token expires at:', expiresAt.toISOString());
+    console.log('Token expires at:', this.tokenExpiresAt.toISOString());
     console.log('Current time:', now.toISOString());
     console.log('Token is expired:', isExpired);
+    console.log('Has refresh token:', !!this.refreshToken);
     console.log('Token length:', account.accessToken?.length);
     console.log('Token preview:', account.accessToken?.substring(0, 20) + '...');
     console.log('Token starts with "v^1.1":', account.accessToken?.startsWith('v^1.1'));
 
-    if (isExpired) {
-      throw new Error(`Access token expired at ${expiresAt.toISOString()}. Please reconnect the account.`);
-    }
-
-    // Decrypt access token - you'll need to implement this based on your encryption method
+    // Decrypt access token
     this.accessToken = this.decryptToken(account.accessToken as string);
   }
 
@@ -161,7 +164,88 @@ export class EbayListingService {
     return encryptedToken;
   }
 
+  private async refreshAccessToken(): Promise<void> {
+    if (!this.refreshToken) {
+      throw new Error('No refresh token available. Please reconnect the account.');
+    }
+
+    console.log('=== REFRESHING ACCESS TOKEN ===');
+    console.log('Account ID:', this.accountId);
+    console.log('Has refresh token:', !!this.refreshToken);
+
+    const tokenUrl = process.env.EBAY_SANDBOX === 'true'
+      ? 'https://api.sandbox.ebay.com/identity/v1/oauth2/token'
+      : 'https://api.ebay.com/identity/v1/oauth2/token';
+
+    const credentials = Buffer.from(`${process.env.EBAY_CLIENT_ID}:${process.env.EBAY_CLIENT_SECRET}`).toString('base64');
+
+    const tokenParams = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: this.refreshToken
+    });
+
+    try {
+      const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${credentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: tokenParams.toString()
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Token refresh failed:', errorText);
+        throw new Error(`Token refresh failed: ${response.status} ${errorText}`);
+      }
+
+      const tokenData = await response.json();
+
+      console.log('✅ Token refreshed successfully');
+      console.log('New token expires in (seconds):', tokenData.expires_in);
+
+      // Update the in-memory token
+      this.accessToken = tokenData.access_token;
+      this.tokenExpiresAt = new Date(Date.now() + (tokenData.expires_in * 1000));
+
+      // Update the database with new token
+      if (typeof window === 'undefined') {
+        // Server-side: Direct database update
+        const prisma = await import('@/app/lib/services/database').then(m => m.default);
+        await prisma.ebayUserToken.update({
+          where: { id: this.accountId },
+          data: {
+            accessToken: tokenData.access_token,
+            expiresAt: this.tokenExpiresAt
+          } as any
+        });
+        console.log('✅ Database updated with new token');
+      } else {
+        // Client-side: Call an API endpoint to update the token
+        console.log('⚠️ Client-side token refresh - database update skipped');
+      }
+    } catch (error) {
+      console.error('Failed to refresh token:', error);
+      throw error;
+    }
+  }
+
+  private async ensureValidToken(): Promise<void> {
+    const now = new Date();
+    const bufferTime = 5 * 60 * 1000; // 5 minutes buffer
+    const tokenWillExpireSoon = this.tokenExpiresAt.getTime() - now.getTime() < bufferTime;
+
+    if (tokenWillExpireSoon) {
+      console.log('Token expired or expiring soon, refreshing...');
+      await this.refreshAccessToken();
+    }
+  }
+
   private async makeEbayRequest(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: any): Promise<any> {
+    // Ensure token is valid before making request
+    await this.ensureValidToken();
+
     const url = `${this.baseInventoryUrl}${endpoint}`;
 
     // Debug the exact request being made
@@ -180,8 +264,6 @@ export class EbayListingService {
       'Content-Language': 'en-US',
       'Accept-Language': 'en-US'
     };
-
-    console.log('Full Headers:', headers);
 
     try {
       const response = await fetch(url, {
@@ -213,6 +295,9 @@ export class EbayListingService {
   }
 
   private async makeAccountRequest(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET'): Promise<any> {
+    // Ensure token is valid before making request
+    await this.ensureValidToken();
+
     const url = `${this.baseAccountUrl}${endpoint}`;
 
     try {
@@ -249,8 +334,24 @@ export class EbayListingService {
   }
 
   async createInventoryLocation(location: InventoryLocation): Promise<any> {
-    const { merchantLocationKey, ...locationData } = location;
-    return this.makeEbayRequest(`/location/${merchantLocationKey}`, 'PUT', locationData);
+    const { merchantLocationKey, address, name, locationTypes, merchantLocationStatus } = location;
+
+    // eBay API requires specific structure with 'location' for address and name at root level
+    const requestBody: any = {
+      name: name,
+      location: {
+        address: address
+      },
+      locationTypes: locationTypes
+    };
+
+    // Only add merchantLocationStatus if provided
+    if (merchantLocationStatus) {
+      requestBody.merchantLocationStatus = merchantLocationStatus;
+    }
+
+    // Use POST method as per eBay API documentation (not PUT)
+    return this.makeEbayRequest(`/location/${merchantLocationKey}`, 'POST', requestBody);
   }
 
   async updateInventoryLocation(merchantLocationKey: string, location: Partial<InventoryLocation>): Promise<any> {
@@ -278,6 +379,16 @@ export class EbayListingService {
 
   async deleteInventoryItem(sku: string): Promise<any> {
     return this.makeEbayRequest(`/inventory_item/${sku}`, 'DELETE');
+  }
+
+  // Update inventory availability at a specific location
+  async updateInventoryItemLocationAvailability(sku: string, merchantLocationKey: string, quantity: number): Promise<any> {
+    return this.makeEbayRequest(`/inventory_item/${sku}/update_location_availability`, 'POST', {
+      availabilityDistributions: [{
+        merchantLocationKey: merchantLocationKey,
+        quantity: quantity
+      }]
+    });
   }
 
   // === OFFERS ===
@@ -357,14 +468,27 @@ export class EbayListingService {
         throw new Error('Cannot access eBay Inventory API. Check token scopes and permissions.');
       }
 
-      // Step 1: Create location (required for publishing)
-      if (params.location) {
-        console.log('Creating inventory location...');
-        results.location = await this.createInventoryLocation(params.location);
-      } else {
-        // Create a default location if none provided (required for publishing)
-        console.log('Creating default inventory location (required for publishing)...');
-        const defaultLocation: InventoryLocation = {
+      // Step 1: ENSURE location exists (CRITICAL - required to avoid Item.Country error)
+      console.log('=== LOCATION SETUP (CRITICAL STEP) ===');
+
+      // First, check if any locations already exist
+      let hasLocation = false;
+      try {
+        const existingLocations = await this.getInventoryLocations();
+        if (existingLocations?.locations && existingLocations.locations.length > 0) {
+          console.log(`✅ Found ${existingLocations.locations.length} existing location(s)`);
+          results.location = existingLocations.locations[0];
+          hasLocation = true;
+        } else {
+          console.log('⚠️ No existing locations found');
+        }
+      } catch (locErr: any) {
+        console.log('⚠️ Could not fetch locations:', locErr.message);
+      }
+
+      // If no location exists, we MUST create one
+      if (!hasLocation) {
+        const locationToCreate: InventoryLocation = params.location || {
           merchantLocationKey: 'default-location-001',
           name: 'Default Location',
           address: {
@@ -372,24 +496,64 @@ export class EbayListingService {
             city: 'New York',
             stateOrProvince: 'NY',
             postalCode: '10001',
-            countryCode: 'US'
+            country: 'US'
           },
-          locationTypes: ['WAREHOUSE'],
-          merchantLocationStatus: 'ENABLED'
+          locationTypes: ['WAREHOUSE']
         };
 
+        console.log('Creating location with key:', locationToCreate.merchantLocationKey);
+
         try {
-          results.location = await this.createInventoryLocation(defaultLocation);
-          console.log('✅ Default location created successfully');
-        } catch (locationError) {
-          console.log('⚠️ Default location might already exist, continuing...');
-          // Location might already exist, that's okay
+          results.location = await this.createInventoryLocation(locationToCreate);
+          console.log('✅ Location created successfully');
+          hasLocation = true;
+        } catch (locationError: any) {
+          // Check if location already exists (error 25801)
+          if (locationError.message?.includes('already exists') || locationError.message?.includes('25801')) {
+            console.log('Location already exists, fetching it...');
+            try {
+              results.location = await this.getInventoryLocation(locationToCreate.merchantLocationKey);
+              console.log('✅ Fetched existing location successfully');
+              hasLocation = true;
+            } catch (fetchError) {
+              console.error('❌ Could not fetch existing location:', fetchError);
+            }
+          } else {
+            console.error('❌ Failed to create location:', locationError.message);
+          }
         }
       }
 
-      // Step 2: Create/Update inventory item
-      console.log('Creating inventory item...');
-      results.inventoryItem = await this.createOrUpdateInventoryItem(params.inventoryItem);
+      // Final check - if still no location, this is a critical error
+      if (!hasLocation) {
+        throw new Error('CRITICAL: Cannot proceed without a location. Item.Country error will occur. Please create at least one inventory location manually in eBay Seller Hub.');
+      }
+
+      console.log('=== LOCATION SETUP COMPLETE ===');
+
+      // Step 2: Create/Update inventory item with location availability
+      console.log('Creating inventory item with location availability...');
+
+      // Get the location key to use
+      const locationKey = results.location?.merchantLocationKey || 'default-location-001';
+
+      // Create inventory item with simple availability structure
+      const quantity = params.inventoryItem.availability?.shipToLocationAvailability?.quantity || 10;
+
+      const inventoryItemWithLocation = {
+        ...params.inventoryItem,
+        availability: {
+          shipToLocationAvailability: {
+            quantity: quantity
+          }
+        }
+      };
+
+      console.log('Creating inventory item with location:', locationKey);
+      console.log('=== INVENTORY ITEM DATA BEING SENT TO EBAY ===');
+      console.log(JSON.stringify(inventoryItemWithLocation, null, 2));
+      console.log('=== END INVENTORY ITEM DATA ===');
+      results.inventoryItem = await this.createOrUpdateInventoryItem(inventoryItemWithLocation);
 
       // Step 2.5: Handle business policies (optional for basic accounts)
       console.log('Checking business policy eligibility...');
@@ -424,14 +588,23 @@ export class EbayListingService {
         updatedOffer = offerWithoutPolicies;
       }
 
-      // Ensure offer has location reference (required for publishing)
+      // Ensure offer has location reference and quantity (required for publishing)
       if (!updatedOffer.merchantLocationKey) {
-        updatedOffer.merchantLocationKey = 'default-location-001';
-        console.log('Added default merchant location key to offer');
+        updatedOffer.merchantLocationKey = results.location?.merchantLocationKey || 'default-location-001';
+        console.log('Added merchant location key to offer:', updatedOffer.merchantLocationKey);
+      }
+
+      // Add availableQuantity to offer (crucial for Item.Country error)
+      if (!updatedOffer.availableQuantity) {
+        updatedOffer.availableQuantity = quantity;
+        console.log('Added availableQuantity to offer:', updatedOffer.availableQuantity);
       }
 
       // Step 3: Create or get existing offer
       console.log('Creating offer...');
+      console.log('=== OFFER DATA BEING SENT TO EBAY ===');
+      console.log(JSON.stringify(updatedOffer, null, 2));
+      console.log('=== END OFFER DATA ===');
       try {
         results.offer = await this.createOffer(updatedOffer);
         console.log('✅ New offer created with ID:', results.offer.offerId);
@@ -444,7 +617,24 @@ export class EbayListingService {
           const existingOffers = await this.getOffers(25, 0, updatedOffer.sku);
 
           if (existingOffers.offers && existingOffers.offers.length > 0) {
-            results.offer = existingOffers.offers[0];
+            const existingOffer = existingOffers.offers[0];
+            console.log('Found existing offer with ID:', existingOffer.offerId);
+
+            // Update the existing offer with location and quantity information
+            console.log('Updating existing offer with location and quantity...');
+            const updateData = {
+              merchantLocationKey: updatedOffer.merchantLocationKey,
+              availableQuantity: updatedOffer.availableQuantity
+            };
+
+            try {
+              await this.updateOffer(existingOffer.offerId, updateData);
+              console.log('✅ Updated existing offer with location and quantity');
+            } catch (updateError) {
+              console.warn('Could not update offer:', updateError);
+            }
+
+            results.offer = existingOffer;
             console.log('✅ Using existing offer with ID:', results.offer.offerId);
           } else {
             throw new Error('Could not find existing offer despite error message');
@@ -457,6 +647,7 @@ export class EbayListingService {
       // Step 4: Publish offer if requested
       if (params.publish && results.offer.offerId) {
         console.log('Publishing offer...');
+        console.log('Note: Inventory item already has location availability set');
         results.listing = await this.publishOffer(results.offer.offerId);
       }
 
