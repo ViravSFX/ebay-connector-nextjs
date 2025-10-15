@@ -1,7 +1,7 @@
 'use client';
 
 import { VStack, HStack, Box, Text } from "@chakra-ui/react";
-import { MdOutlineSpaceDashboard, MdLogout, MdOutlinePeople, MdVpnKey, MdOutlineStore, MdBugReport } from "react-icons/md";
+import { MdOutlineSpaceDashboard, MdLogout, MdOutlinePeople, MdVpnKey, MdOutlineStore, MdBugReport, MdBook } from "react-icons/md";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -77,6 +77,7 @@ export function Navigation({ collapse }: NavigationProps) {
       { text: "Users", icon: MdOutlinePeople, path: "/users" },
       { text: "API Tokens", icon: MdVpnKey, path: "/api-tokens" },
       { text: "eBay Accounts", icon: MdOutlineStore, path: "/ebay-connections" },
+      { text: "Documentation", icon: MdBook, path: "/documentation" },
     ];
 
     if (isSuperAdmin) {
@@ -113,6 +114,10 @@ export function Navigation({ collapse }: NavigationProps) {
     // For eBay Accounts, check if we're on ebay-connections page
     if (item.text === "eBay Accounts") {
       return pathname === "/ebay-connections";
+    }
+    // For Documentation, check if we're on documentation page
+    if (item.text === "Documentation") {
+      return pathname === "/documentation";
     }
     // For Debug Logs, check if we're on debug-logs page
     if (item.text === "Debug Logs") {
