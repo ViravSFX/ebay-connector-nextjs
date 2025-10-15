@@ -96,13 +96,14 @@ export async function GET(
     console.error('[LEGACY LISTINGS API] GET Error:', error);
 
     // Handle token expiration
-    if (error.message.includes('Auth token') || error.message.includes('Invalid access token')) {
+    if (error.message.includes('Auth token') || error.message.includes('Invalid access token') || error.message.includes('expired')) {
       return NextResponse.json(
         {
           success: false,
-          message: 'eBay authentication failed. The Trading API requires special authentication.',
+          message: 'eBay token has expired. Please reconnect your eBay account.',
           error: error.message,
-          suggestion: 'You may need to use Auth\'n\'Auth token or ensure OAuth token has Trading API access'
+          suggestion: 'Go to eBay Accounts page and click "Reconnect Account" to refresh your authentication.',
+          actionRequired: 'reconnect'
         },
         { status: 401 }
       );
