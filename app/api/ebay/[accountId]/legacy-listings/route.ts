@@ -44,7 +44,11 @@ export async function GET(
 
     if (apiType === 'sellerlist') {
       // Use GetSellerList - gets listings by date range
-      result = await tradingService.getSellerList(startTime, endTime, pageNumber);
+      result = await tradingService.getSellerList(
+        startTime || undefined,
+        endTime || undefined,
+        pageNumber
+      );
     } else {
       // Use GetMyeBaySelling - gets active listings
       result = await tradingService.getMyeBaySelling(pageNumber, entriesPerPage);
@@ -75,8 +79,8 @@ export async function GET(
         const inventoryService = new EbayListingService(account);
         const inventoryResult = await inventoryService.getInventoryItems(100, 0);
 
-        response.data['inventoryApiItems'] = inventoryResult.inventoryItems || [];
-        response.data['comparison'] = {
+        (response.data as any)['inventoryApiItems'] = inventoryResult.inventoryItems || [];
+        (response.data as any)['comparison'] = {
           tradingApiCount: result.items?.length || 0,
           inventoryApiCount: inventoryResult.total || 0,
           difference: (result.items?.length || 0) - (inventoryResult.total || 0)
@@ -187,7 +191,7 @@ export async function POST(
             imageUrls: legacyItem.pictureUrls || [],
             aspects: {} // Would need proper mapping
           },
-          condition: 'NEW', // Would need condition mapping
+          condition: 'NEW' as const, // Would need condition mapping
           availability: {
             shipToLocationAvailability: {
               quantity: parseInt(legacyItem.quantityAvailable || '0')

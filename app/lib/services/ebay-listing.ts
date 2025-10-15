@@ -657,6 +657,16 @@ export class EbayListingService {
       throw error;
     }
   }
+
+  // === BULK MIGRATION ===
+
+  // Bulk migrate Trading API listings to Inventory API
+  async bulkMigrateListing(migrationRequest: any): Promise<any> {
+    console.log('[EBAY API] Bulk migrating listings to Inventory API');
+
+    // eBay's bulk migration endpoint - correct path
+    return this.makeEbayRequest('/bulk_migrate_listing', 'POST', migrationRequest);
+  }
 }
 
 // Helper function to get marketplace currency
